@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<!--
+  index.html — API Box Dashboard
+  Wird per LittleFS auf den ESP32-C6 hochgeladen und vom Webserver (mc.ino) ausgeliefert.
+  Ruft alle Sensor-Endpunkte per fetch() ab (siehe js/script.js).
+-->
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>API Box — Dashboard</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <h1>API Box</h1>
+    <p>ESP32-C6 Sensor-API &middot; Live-Werte</p>
+    <button id="refresh">Aktualisieren</button>
+    <span id="status" class="status"></span>
+  </header>
+
+  <main id="grid" class="grid">
+    <!-- Sensorkarten werden von script.js erzeugt -->
+  </main>
+
+  <footer>
+    <p>Endpunkte: <code>/temperatur</code>, <code>/luftfeuchtigkeit</code>, <code>/co2</code>,
+       <code>/bewegung</code>, <code>/lautstaerke</code>, <code>/magnet</code>,
+       <code>/helligkeit</code>, <code>/alkohol</code>, <code>/lage</code>,
+       <code>/gewicht</code>, <code>/rauch</code>, <code>/luftdruck</code>,
+       <code>/hoehe</code>, <code>/distanz</code></p>
+  </footer>
+
+  <script src="/js/script.js"></script>
+</body>
+</html>

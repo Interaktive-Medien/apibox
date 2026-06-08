@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<!--
+  client_fetch.html — Beispiel: API Box client-seitig abfragen
+  ----------------------------------------------------------------
+  Zeigt, wie ein beliebiger Netzwerkteilnehmer die JSON-Strings der API Box
+  mit der JavaScript fetch()-Funktion abruft.
+  Vorgehen: Datei lokal im Browser oeffnen, IP-Adresse der API Box eintragen,
+  einen Sensor waehlen, "Abfragen" klicken.
+
+  Hinweis CORS: Die API Box (ESP32) setzt standardmaessig keinen
+  Access-Control-Allow-Origin-Header. Beim Oeffnen als lokale Datei (file://)
+  funktioniert fetch() i.d.R. trotzdem; bei Problemen die Seite ueber die
+  API Box selbst ausliefern (LittleFS) oder den PHP-Proxy (server_proxy.php) nutzen.
+-->
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>API Box — fetch() Beispiel</title>
+  <style>
+    body { font-family: sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; }
+    label { font-weight: 600; display: block; margin: 14px 0 4px; }
+    input, select, button { padding: 10px; font-size: 15px; border-radius: 8px; border: 1px solid #ccc; }
+    input, select { width: 100%; }
+    button { margin-top: 16px; background: #2a5298; color: #fff; border: 0; cursor: pointer; font-weight: 700; }
+    pre { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 10px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>API Box — fetch() Beispiel</h1>
+
+  <label>IP-Adresse der API Box</label>
+  <input id="ip" type="text" value="192.168.0.42" placeholder="z.B. 192.168.0.42">
+
+  <label>Sensor / Endpunkt</label>
+  <select id="endpoint">
+    <option value="/temperatur">/temperatur</option>
+    <option value="/luftfeuchtigkeit">/luftfeuchtigkeit</option>
+    <option value="/co2">/co2</option>
+    <option value="/bewegung">/bewegung</option>
+    <option value="/lautstaerke">/lautstaerke</option>
+    <option value="/magnet">/magnet</option>
+    <option value="/helligkeit">/helligkeit</option>
+    <option value="/alkohol">/alkohol</option>
+    <option value="/lage">/lage</option>
+    <option value="/gewicht">/gewicht</option>
+    <option value="/rauch">/rauch</option>
+    <option value="/luftdruck">/luftdruck</option>
+    <option value="/hoehe">/hoehe</option>
+    <option value="/distanz">/distanz</option>
+  </select>
+
+  <button id="go">Abfragen</button>
+
+  <h3>Antwort (JSON)</h3>
+  <pre id="output">–</pre>
+
+  <script>
+    const output = document.getElementById("output");
+
+    async function abfragen() {
+      const ip  = document.getElementById("ip").value.trim();
+      const ep  = document.getElementById("endpoint").value;
+      const url = "http://" + ip + ep;
+
+      output.textContent = "Lade " + url + " ...";
+      try {
+        const res  = await fetch(url);                 // <-- HTTP GET an die API Box
+        const data = await res.json();                 // <-- JSON-String -> Objekt
+        output.textContent = JSON.stringify(data, null, 2);
+        // Einzelnen Wert verwenden:  data.wert / data.einheit / data.sensor
+      } catch (e) {
+        output.textContent = "Fehler: " + e.message;
+      }
+    }
+
+    document.getElementById("go").addEventListener("click", abfragen);
+  </script>
+</body>
+</html>
