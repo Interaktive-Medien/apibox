@@ -1,36 +1,53 @@
-<!DOCTYPE html>
+<!doctype html>
 <!--
-  index.html — API Box Dashboard
-  Wird per LittleFS auf den ESP32-C6 hochgeladen und vom Webserver (mc.ino) ausgeliefert.
-  Ruft alle Sensor-Endpunkte per fetch() ab (siehe js/script.js).
+  index.html — API Box WLAN Setup (Captive Portal)
+  Wird per LittleFS auf den ESP32-C6 hochgeladen und vom Webserver ausgeliefert.
 -->
 <html lang="de">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>API Box — Dashboard</title>
-  <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-  <header>
-    <h1>API Box</h1>
-    <p>ESP32-C6 Sensor-API &middot; Live-Werte</p>
-    <button id="refresh">Aktualisieren</button>
-    <span id="status" class="status"></span>
-  </header>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>API Box — WLAN Setup</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="card">
+      <h1>API Box</h1>
+      <p class="sub">WLAN-Zugangsdaten hinterlegen</p>
 
-  <main id="grid" class="grid">
-    <!-- Sensorkarten werden von script.js erzeugt -->
-  </main>
+      <div class="tabs">
+        <div class="tab active" id="tab-home" onclick="showTab('home')">
+          Heimnetzwerk
+        </div>
+        <div class="tab" id="tab-school" onclick="showTab('school')">
+          Schulnetzwerk
+        </div>
+      </div>
 
-  <footer>
-    <p>Endpunkte: <code>/temperatur</code>, <code>/luftfeuchtigkeit</code>, <code>/co2</code>,
-       <code>/bewegung</code>, <code>/lautstaerke</code>, <code>/magnet</code>,
-       <code>/helligkeit</code>, <code>/alkohol</code>, <code>/lage</code>,
-       <code>/gewicht</code>, <code>/rauch</code>, <code>/luftdruck</code>,
-       <code>/hoehe</code>, <code>/distanz</code></p>
-  </footer>
+      <!-- Heimnetzwerk -->
+      <form class="form active" id="form-home" action="/save" method="POST">
+        <input type="hidden" name="mode" value="home">
+        <label>SSID</label>
+        <input type="text" name="ssid_privat" placeholder="z.B. FritzBox-1234" required>
+        <label>Passwort</label>
+        <input type="password" name="pass_privat" placeholder="WLAN-Passwort">
+        <button type="submit">Speichern &amp; Verbinden</button>
+      </form>
 
-  <script src="/js/script.js"></script>
-</body>
+      <!-- Schulnetzwerk (WPA2-Enterprise) -->
+      <form class="form" id="form-school" action="/save" method="POST">
+        <input type="hidden" name="mode" value="school">
+        <label>Netzwerkname</label>
+        <input type="text" name="ssid_schule" placeholder="z.B. eduroam" required>
+        <label>Username</label>
+        <input type="text" name="user_schule" placeholder="z.B. me@fhgr.ch" required>
+        <label>Passwort</label>
+        <input type="password" name="pass_schule" placeholder="Passwort">
+        <button type="submit">Speichern &amp; Verbinden</button>
+      </form>
+      <p class="hint">Nach dem Speichern startet die API Box neu.</p>
+    </div>
+
+    <script src="js/script.js"></script>
+  </body>
 </html>

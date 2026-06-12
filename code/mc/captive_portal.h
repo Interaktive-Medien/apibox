@@ -11,10 +11,18 @@
  *    checkPortalButton()   -> true, wenn Taster gedrueckt (manueller Portal-Start)
  *
  *  Preferences-Namespace "wifi":
- *    "mode"  = "home" | "school"
- *    "ssid"  = Netzwerkname
- *    "pass"  = Passwort
- *    "user"  = Username (nur Schulnetzwerk / WPA2-Enterprise)
+ *    "mode"          = "home" | "school"
+ *    "ssid_privat"   = Netzwerkname (Home)
+ *    "pass_privat"   = Passwort (Home)
+ *    "ssid_schule"   = Netzwerkname (School)
+ *    "user_schule"   = Username (School)
+ *    "pass_schule"   = Passwort (School)
+ *
+ *  Beispiele:
+ *    ssid_privat = tinkergarden
+ *    ssid_schule = eduroam
+ *    user_schule = fiesjan@fhgr.ch
+ *    pass_privat = strenggeheim.
  *
  *  Taster:  GPIO20 (INPUT_PULLDOWN). Orientiert an 00_Button.ino.
  *  Captive Portal orientiert an 14c_mit_Webserver_captive_portal.ino.
@@ -23,21 +31,23 @@
 #ifndef CAPTIVE_PORTAL_H
 #define CAPTIVE_PORTAL_H
 
-#include "esp_eap_client.h"   // WPA2-Enterprise API (Schulnetzwerk)
+#include "esp_eap_client.h" // WPA2-Enterprise API (Schulnetzwerk)
 
 bool portalRoutesRegistered = false;
 
 // ---------------------------------------------------------------------------
 // Taster (GPIO20) zum manuellen Start des Captive Portals
 // ---------------------------------------------------------------------------
-void setupPortalButton() {
-  pinMode(PIN_BUTTON_PORTAL, INPUT_PULLDOWN);   // PIN_BUTTON_PORTAL = 20 (aus mc.ino)
+void setupPortalButton()
+{
+  pinMode(PIN_BUTTON_PORTAL, INPUT_PULLDOWN); // PIN_BUTTON_PORTAL = 20 (aus mc.ino)
 }
 
-bool checkPortalButton() {
+bool checkPortalButton()
+{
   static int prevState = LOW;
   int state = digitalRead(PIN_BUTTON_PORTAL);
-  bool pressed = (state == HIGH && prevState == LOW);   // steigende Flanke
+  bool pressed = (state == HIGH && prevState == LOW); // steigende Flanke
   prevState = state;
   return pressed;
 }
@@ -46,40 +56,76 @@ bool checkPortalButton() {
 // Mit gespeichertem WLAN verbinden (Szenario 1)
 // Rueckgabe: true = verbunden, false = kein Netzwerk gefunden
 // ---------------------------------------------------------------------------
-bool connectToSavedWiFi() {
-  preferences.begin("wifi", true);            // read-only (global aus mc.ino)
-  String mode = preferences.getString("mode", "");
-  String ssid = preferences.getString("ssid", "");
-  String pass = preferences.getString("pass", "");
-  String user = preferences.getString("user", "");
+bool connectToSavedWiFi()
+{
+  preferences.begin("wifi", true); // read-only (global aus mc.ino)
+  String mode = preferences.getString("mode", "home");
+  String ssid_privat = preferences.getString("ssid_privat", "");
+  String pass_privat = preferences.getString("pass_privat", "");
+  String ssid_schule = preferences.getString("ssid_schule", "");
+  String user_schule = preferences.getString("user_schule", "");
+  String pass_schule = preferences.getString("pass_schule", "");
+
+  // Serial.println("Gelesene WLAN-Informationen:");
+  // Serial.print("mode: ");
+  // Serial.println(mode);
+  // Serial.print("ssid_privat: ");
+  // Serial.println(ssid_privat);
+  // Serial.print("pass_privat: ");
+  // Serial.println(pass_privat);
+  // Serial.print("ssid_schule: ");
+  // Serial.println(ssid_schule);
+  // Serial.print("user_schule: ");
+  // Serial.println(user_schule);
+  // Serial.print("pass_schule: ");
+  // Serial.println(pass_schule);
+
   preferences.end();
 
-  if (ssid == "") {
+  String ssid_to_connect, pass_to_connect, user_to_connect;
+  if (mode == "school")
+  {
+    ssid_to_connect = ssid_schule;
+    user_to_connect = user_schule;
+    pass_to_connect = pass_schule;
+  }
+  else
+  {
+    ssid_to_connect = ssid_privat;
+    pass_to_connect = pass_privat;
+  }
+
+  if (ssid_to_connect == "")
+  {
     Serial.println("Keine gespeicherten WLAN-Credentials.");
     return false;
   }
 
-  Serial.printf("Verbinde mit gespeichertem WLAN: %s (Modus: %s)\n", ssid.c_str(), mode.c_str());
+  Serial.printf("\nVerbinde mit gespeichertem WLAN: %s (Modus: %s)\n", ssid_to_connect.c_str(), mode.c_str());
 
   WiFi.disconnect(true);
   WiFi.mode(WIFI_STA);
 
-  if (mode == "school") {
+  if (mode == "school")
+  {
     // WPA2-Enterprise (z.B. eduroam)
-    esp_eap_client_set_identity((uint8_t *)user.c_str(), user.length());
-    esp_eap_client_set_username((uint8_t *)user.c_str(), user.length());
-    esp_eap_client_set_password((uint8_t *)pass.c_str(), pass.length());
+    esp_eap_client_set_identity((uint8_t *)user_to_connect.c_str(), user_to_connect.length());
+    esp_eap_client_set_username((uint8_t *)user_to_connect.c_str(), user_to_connect.length());
+    esp_eap_client_set_password((uint8_t *)pass_to_connect.c_str(), pass_to_connect.length());
     esp_eap_client_set_disable_time_check(true);
     esp_wifi_sta_enterprise_enable();
-    WiFi.begin(ssid.c_str());
-  } else {
+    WiFi.begin(ssid_to_connect.c_str());
+  }
+  else
+  {
     // Heimnetzwerk (WPA2-Personal)
-    WiFi.begin(ssid.c_str(), pass.c_str());
+    WiFi.begin(ssid_to_connect.c_str(), pass_to_connect.c_str());
   }
 
   // max. 10 Versuche / ca. 10 Sekunden
   int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+  while (WiFi.status() != WL_CONNECTED && attempts < 20)
+  {
     delay(500);
     Serial.print(".");
     attempts++;
@@ -90,108 +136,51 @@ bool connectToSavedWiFi() {
 }
 
 // ---------------------------------------------------------------------------
-// HTML der Setup-Seite (modern gestyltes Formular mit zwei Reitern)
+// Vorwaertsdeklaration (in mc.ino definiert)
 // ---------------------------------------------------------------------------
-String portalHtml() {
-  String page = R"rawliteral(
-<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>API Box — WLAN Setup</title>
-<style>
-  * { box-sizing: border-box; }
-  body { margin:0; font-family: -apple-system, Segoe UI, Roboto, sans-serif;
-         background: linear-gradient(135deg,#1e3c72,#2a5298); color:#222;
-         min-height:100vh; display:flex; align-items:center; justify-content:center; }
-  .card { background:#fff; width:92%; max-width:420px; border-radius:18px;
-          box-shadow:0 20px 50px rgba(0,0,0,.3); padding:28px; }
-  h1 { margin:0 0 4px; font-size:22px; }
-  p.sub { margin:0 0 20px; color:#666; font-size:14px; }
-  .tabs { display:flex; background:#eef1f6; border-radius:12px; padding:4px; margin-bottom:20px; }
-  .tab { flex:1; text-align:center; padding:10px; border-radius:9px; cursor:pointer;
-         font-weight:600; font-size:14px; color:#555; user-select:none; }
-  .tab.active { background:#2a5298; color:#fff; }
-  label { display:block; font-size:13px; font-weight:600; margin:14px 0 6px; }
-  input { width:100%; padding:12px; border:1px solid #ccd2dd; border-radius:10px; font-size:15px; }
-  input:focus { outline:none; border-color:#2a5298; }
-  button { width:100%; margin-top:22px; padding:14px; border:0; border-radius:10px;
-           background:#2a5298; color:#fff; font-size:16px; font-weight:700; cursor:pointer; }
-  button:active { transform:scale(.99); }
-  .form { display:none; }
-  .form.active { display:block; }
-  .hint { font-size:12px; color:#888; margin-top:14px; text-align:center; }
-</style>
-</head>
-<body>
-  <div class="card">
-    <h1>API Box</h1>
-    <p class="sub">WLAN-Zugangsdaten hinterlegen</p>
-
-    <div class="tabs">
-      <div class="tab active" id="tab-home"   onclick="showTab('home')">Heimnetzwerk</div>
-      <div class="tab"        id="tab-school" onclick="showTab('school')">Schulnetzwerk</div>
-    </div>
-
-    <!-- Heimnetzwerk -->
-    <form class="form active" id="form-home" action="/save" method="POST">
-      <input type="hidden" name="mode" value="home">
-      <label>SSID</label>
-      <input type="text" name="ssid" placeholder="z.B. FritzBox-1234" required>
-      <label>Passwort</label>
-      <input type="password" name="pass" placeholder="WLAN-Passwort">
-      <button type="submit">Speichern &amp; Verbinden</button>
-    </form>
-
-    <!-- Schulnetzwerk (WPA2-Enterprise) -->
-    <form class="form" id="form-school" action="/save" method="POST">
-      <input type="hidden" name="mode" value="school">
-      <label>Netzwerkname</label>
-      <input type="text" name="ssid" placeholder="z.B. eduroam" required>
-      <label>Username</label>
-      <input type="text" name="user" placeholder="z.B. me@fhgr.ch" required>
-      <label>Passwort</label>
-      <input type="password" name="pass" placeholder="Passwort">
-      <button type="submit">Speichern &amp; Verbinden</button>
-    </form>
-
-    <p class="hint">Nach dem Speichern startet die API Box neu.</p>
-  </div>
-
-<script>
-function showTab(which){
-  document.getElementById('tab-home').classList.toggle('active', which==='home');
-  document.getElementById('tab-school').classList.toggle('active', which==='school');
-  document.getElementById('form-home').classList.toggle('active', which==='home');
-  document.getElementById('form-school').classList.toggle('active', which==='school');
-}
-</script>
-</body>
-</html>
-)rawliteral";
-  return page;
-}
+bool handleFileRead(String path);
 
 // ---------------------------------------------------------------------------
 // Webserver-Handler fuer das Captive Portal
 // ---------------------------------------------------------------------------
-void handlePortalRoot() {
-  server.send(200, "text/html", portalHtml());
+void handlePortalRoot()
+{
+  if (LittleFS.exists("/index.html"))
+  {
+    File file = LittleFS.open("/index.html", "r");
+    server.streamFile(file, "text/html");
+    file.close();
+  }
+  else
+  {
+    server.send(404, "text/plain", "Setup-Seite nicht in LittleFS gefunden.");
+  }
 }
 
-void handlePortalSave() {
+void handlePortalSave()
+{
   String mode = server.hasArg("mode") ? server.arg("mode") : "home";
-  String ssid = server.hasArg("ssid") ? server.arg("ssid") : "";
-  String pass = server.hasArg("pass") ? server.arg("pass") : "";
-  String user = server.hasArg("user") ? server.arg("user") : "";
+  String ssid_privat = server.hasArg("ssid_privat") ? server.arg("ssid_privat") : "";
+  String pass_privat = server.hasArg("pass_privat") ? server.arg("pass_privat") : "";
+  String ssid_schule = server.hasArg("ssid_schule") ? server.arg("ssid_schule") : "";
+  String user_schule = server.hasArg("user_schule") ? server.arg("user_schule") : "";
+  String pass_schule = server.hasArg("pass_schule") ? server.arg("pass_schule") : "";
 
   // Persistent speichern
   preferences.begin("wifi", false);
   preferences.putString("mode", mode);
-  preferences.putString("ssid", ssid);
-  preferences.putString("pass", pass);
-  preferences.putString("user", user);
+
+  if (mode == "school")
+  {
+    preferences.putString("ssid_schule", ssid_schule);
+    preferences.putString("user_schule", user_schule);
+    preferences.putString("pass_schule", pass_schule);
+  }
+  else if (mode == "home")
+  {
+    preferences.putString("ssid_privat", ssid_privat);
+    preferences.putString("pass_privat", pass_privat);
+  }
   preferences.end();
 
   String resp = "<!DOCTYPE html><html><head><meta charset='utf-8'>";
@@ -199,22 +188,24 @@ void handlePortalSave() {
   resp += "<style>body{font-family:sans-serif;background:#2a5298;color:#fff;";
   resp += "display:flex;align-items:center;justify-content:center;height:100vh;text-align:center}</style>";
   resp += "</head><body><div><h2>Gespeichert!</h2>";
-  resp += "<p>SSID: " + ssid + "</p><p>Die API Box startet neu und verbindet sich...</p></div></body></html>";
+  resp += "<p>SSID: " + (mode == "school" ? ssid_schule : ssid_privat) + "</p>";
+  resp += "<p>Die API Box startet neu und verbindet sich...</p></div></body></html>";
   server.send(200, "text/html", resp);
 
   Serial.println("Credentials gespeichert. Neustart in 2s...");
   delay(2000);
-  ESP.restart();   // sauberer Neustart -> connectToSavedWiFi() beim Boot
+  ESP.restart(); // sauberer Neustart -> connectToSavedWiFi() beim Boot
 }
 
 // ---------------------------------------------------------------------------
 // Captive Portal starten (Szenario 2)
 // ---------------------------------------------------------------------------
-void startCaptivePortal() {
+void startCaptivePortal()
+{
   Serial.println("Starte Access Point 'apibox'...");
 
   WiFi.mode(WIFI_AP);
-  WiFi.softAP("apibox");                       // offen, ohne Passwort
+  WiFi.softAP("apibox"); // offen, ohne Passwort
 
   IPAddress apIP = WiFi.softAPIP();
   Serial.print("AP-IP: ");
@@ -223,16 +214,23 @@ void startCaptivePortal() {
   // DNS: alle Domains -> ESP (Captive Portal)
   dnsServer.start(DNS_PORT, "*", apIP);
 
-  if (!portalRoutesRegistered) {
+  if (!portalRoutesRegistered)
+  {
     server.on("/", HTTP_GET, handlePortalRoot);
     server.on("/save", HTTP_POST, handlePortalSave);
-    server.onNotFound(handlePortalRoot);       // alles auf Setup-Seite leiten
+
+    // onNotFound: Erst versuchen Datei zu lesen (CSS/JS), sonst Setup-Seite
+    server.onNotFound([]()
+                      {
+      if (!handleFileRead(server.uri())) {
+        handlePortalRoot();
+      } });
     portalRoutesRegistered = true;
   }
   server.begin();
 
   // Anzeige auf dem Display
-  displayText("Verbinde dich mit\ndem Netzwerk\n'apibox' und\nhinterlege deine\nWLAN Credentials.");   // display.h
+  displayText("Verbinde dich mit\ndem Netzwerk\n'apibox' und\nhinterlege deine\nWLAN Credentials."); // display.h
   Serial.println("Captive Portal aktiv (apibox).");
 }
 

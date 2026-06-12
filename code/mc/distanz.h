@@ -20,22 +20,29 @@
 Adafruit_VL53L0X lox = Adafruit_VL53L0X();
 bool loxInitialized = false;
 
-void setupDistanz() {
-  if (lox.begin()) {
+void setupDistanz()
+{
+  if (lox.begin())
+  {
     loxInitialized = true;
     Serial.println("VL53L0X initialisiert.");
-  } else {
+  }
+  else
+  {
     loxInitialized = false;
     Serial.println("VL53L0X nicht gefunden!");
   }
 }
 
-String getDistanz() {
+String getDistanz()
+{
   int distance = -1;
-  if (loxInitialized) {
+  if (loxInitialized)
+  {
     VL53L0X_RangingMeasurementData_t measure;
     lox.rangingTest(&measure, false);
-    if (measure.RangeStatus != 4) {     // 4 = out of range
+    if (measure.RangeStatus != 4)
+    { // 4 = out of range
       distance = measure.RangeMilliMeter;
     }
   }
