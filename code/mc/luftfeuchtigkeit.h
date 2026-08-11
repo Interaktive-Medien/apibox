@@ -10,8 +10,15 @@
 #ifndef LUFTFEUCHTIGKEIT_H
 #define LUFTFEUCHTIGKEIT_H
 
-String getLuftfeuchtigkeit() {
-  readSCD41();  // Funktion in temperatur.h
+// Forward Declaration (in mc.ino definiert)
+// String createJsonResponse(String wert, String einheit, String datentyp, String sensor);
+void readSCD41();            // in temperatur.h
+extern float scd41_humidity; // in temperatur.h
+
+// aufgerufen in mc.ino
+String getLuftfeuchtigkeit()
+{
+  readSCD41(); // in temperatur.h
   return createJsonResponse(String(scd41_humidity, 2), "%", "float", "SCD41");
 }
 

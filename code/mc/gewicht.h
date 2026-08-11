@@ -14,7 +14,7 @@
  *  Daher auf GPIO21/22 verschoben, damit alle Sensoren gleichzeitig funktionieren.
  *
  *  Kalibration: Der Kalibrationsfaktor wird persistent in Preferences gespeichert
- *  (Namespace "calib", Key "kf_gewicht" — NVS-Keys sind auf 15 Zeichen begrenzt,
+ *  (Namespace "calib", Key "kf_gewicht" — NVS-Keys are on 15 Zeichen begrenzt,
  *  daher Kurzform der Variable "kalibrationsfaktor_gewicht").
  *  Ermittlung einmalig mit calibration/gewicht_kalibrieren.ino.
  **********************************************************************************************/
@@ -23,37 +23,49 @@
 #define GEWICHT_H
 
 #include "HX711.h"
+#include <Preferences.h>
 
-#define HX711_DT  21
+// Forward Declaration (in mc.ino definiert)
+// String createJsonResponse(String wert, String einheit, String datentyp, String sensor);
+
+// Externer Zugriff auf Preferences (in wlan.h definiert)
+extern Preferences preferences;
+
+#define HX711_DT 21
 #define HX711_SCK 22
 
 HX711 scale;
-float kalibrationsfaktor_gewicht = 1.0;   // wird aus Preferences geladen
+float kalibrationsfaktor_gewicht = 1.0; // wird aus Preferences geladen
 
-void setupGewicht() {
+// aufgerufen in mc.ino
+void setupGewicht()
+{
   scale.begin(HX711_DT, HX711_SCK);
   scale.set_gain(128);
 
   // Kalibrationsfaktor aus Preferences laden
-  preferences.begin("calib", true);                                   // global aus mc.ino
+  preferences.begin("calib", true); // in wlan.h
   kalibrationsfaktor_gewicht = preferences.getFloat("kf_gewicht", 1.0);
   preferences.end();
 
   scale.set_scale(kalibrationsfaktor_gewicht);
-  scale.tare(15);   // Nullpunkt setzen (nichts auflegen beim Start)
+  scale.tare(15); // Nullpunkt setzen (nichts auflegen beim Start)
 
   Serial.print("HX711 initialisiert. calFactor = ");
   Serial.println(kalibrationsfaktor_gewicht);
 }
 
-String getGewicht() {
+// aufgerufen in mc.ino
+String getGewicht()
+{
   // get_units() liefert Gramm (calFactor wurde mit g-Referenz ermittelt) -> /1000 = kg
   float kg = 0.0;
-  if (scale.is_ready()) {
+  if (scale.is_ready())
+  {
     kg = scale.get_units(10) / 1000.0;
   }
 
-  return createJsonResponse(String(kg, 2), "kg", "float", "HX711");
+  return createJsonResponse(String(kg, 2), "kg", "float", "HX711"); // in mc.ino
 }
 
 #endif

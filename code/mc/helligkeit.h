@@ -15,23 +15,33 @@
 
 #include <BH1750.h>
 
+// Forward Declaration (in mc.ino definiert)
+// String createJsonResponse(String wert, String einheit, String datentyp, String sensor);
+
 BH1750 lightMeter;
 bool bh1750Initialized = false;
 
-void setupHelligkeit() {
+// aufgerufen in mc.ino
+void setupHelligkeit()
+{
   // Wire.begin() erfolgt zentral in mc.ino
-  if (lightMeter.begin()) {
+  if (lightMeter.begin())
+  {
     Serial.println("BH1750 initialisiert.");
     bh1750Initialized = true;
-  } else {
+  }
+  else
+  {
     Serial.println("BH1750 nicht gefunden!");
     bh1750Initialized = false;
   }
 }
 
-String getHelligkeit() {
+// aufgerufen in mc.ino
+String getHelligkeit()
+{
   float lux = bh1750Initialized ? lightMeter.readLightLevel() : -1.0;
-  return createJsonResponse(String(lux, 2), "lx", "float", "BH1750");
+  return createJsonResponse(String(lux, 2), "lx", "float", "BH1750"); // in mc.ino
 }
 
 #endif

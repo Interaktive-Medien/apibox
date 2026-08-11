@@ -11,9 +11,21 @@
 #ifndef HOEHE_H
 #define HOEHE_H
 
-String getHoehe() {
-  float meter = bmpInitialized ? bmp.readAltitude(SEALEVEL_HPA) : -1.0;   // bmp, SEALEVEL_HPA aus luftdruck.h
-  return createJsonResponse(String(meter, 2), "m", "float", "BMP280");
+#include <Adafruit_BMP280.h>
+
+// Forward Declaration (in mc.ino definiert)
+// String createJsonResponse(String wert, String einheit, String datentyp, String sensor);
+
+// Externer Zugriff auf Objekte in luftdruck.h
+extern Adafruit_BMP280 bmp;
+extern bool bmpInitialized;
+extern const float SEALEVEL_HPA;
+
+// aufgerufen in mc.ino
+String getHoehe()
+{
+  float meter = bmpInitialized ? bmp.readAltitude(SEALEVEL_HPA) : -1.0; // in luftdruck.h
+  return createJsonResponse(String(meter, 2), "m", "float", "BMP280");  // in mc.ino
 }
 
 #endif

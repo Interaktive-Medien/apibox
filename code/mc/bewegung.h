@@ -12,12 +12,19 @@
 #ifndef BEWEGUNG_H
 #define BEWEGUNG_H
 
-void setupBewegung() {
+// Forward Declaration (in mc.ino definiert)
+// String createJsonResponse(String wert, String einheit, String datentyp, String sensor);
+
+// aufgerufen in mc.ino
+void setupBewegung()
+{
   pinMode(PIN_PIR, INPUT);
   Serial.println("PIR SR602 initialisiert.");
 }
 
-String getBewegung() {
+// aufgerufen in mc.ino
+String getBewegung()
+{
   int state = digitalRead(PIN_PIR);
   return createJsonResponse((state == HIGH) ? "true" : "false", "bewegung", "boolean", "SR602");
 }

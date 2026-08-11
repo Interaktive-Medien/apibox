@@ -4,6 +4,7 @@
 * Original-Demo 23_Luftdruck.ino — Referenz fuer mc/hoehe.h.
 * Library: "Adafruit BMP280 Library" (+ Adafruit Unified Sensor)
 * Sensor: VCC<->3.3V  GND<->GND  SDA<->GPIO6  SCL<->GPIO7
+* Achtung_ Höhe wird aus dem Luftdruck berechnet. In GR gehen wir von einem Luftdruck von 1019hPa auf Meereshöhe aus. Kann je nach Wetter variieren.
 ***********************************************************************************************/
 
 #include <Wire.h>
@@ -12,7 +13,8 @@
 #define I2C_SDA 6
 #define I2C_SCL 7
 
-const float SEALEVEL_HPA = 1013.25;
+// Angepasst an das heutige Wetter:
+const float SEALEVEL_HPA = 1019;
 Adafruit_BMP280 bmp;
 
 void setup() {

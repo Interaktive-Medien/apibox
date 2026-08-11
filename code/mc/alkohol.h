@@ -16,19 +16,26 @@
 #ifndef ALKOHOL_H
 #define ALKOHOL_H
 
-void setupAlkohol() {
-  analogReadResolution(12);   // 0-4095
+// Forward Declaration (in mc.ino definiert)
+// String createJsonResponse(String wert, String einheit, String datentyp, String sensor);
+
+// aufgerufen in mc.ino
+void setupAlkohol()
+{
+  analogReadResolution(12); // 0-4095
   Serial.println("MQ-3 Alkoholsensor initialisiert.");
 }
 
-String getAlkohol() {
+// aufgerufen in mc.ino
+String getAlkohol()
+{
   int raw = analogRead(PIN_MQ3);
 
   // Vereinfachte Umrechnung Rohwert -> mg/L (grobe Naeherung).
   // 0 ... 4095  ->  0.00 ... ca. 2.00 mg/L
   float mgL = (raw / 4095.0) * 2.0;
 
-  return createJsonResponse(String(mgL, 2), "mg/L", "float", "MQ-3");
+  return createJsonResponse(String(mgL, 2), "mg/L", "float", "MQ-3"); // in mc.ino
 }
 
 #endif

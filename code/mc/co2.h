@@ -16,8 +16,15 @@
 #ifndef CO2_H
 #define CO2_H
 
-String getCO2() {
-  readSCD41();  // Funktion in temperatur.h
+// Forward Declaration (in mc.ino definiert)
+// String createJsonResponse(String wert, String einheit, String datentyp, String sensor);
+void readSCD41();          // in temperatur.h
+extern uint16_t scd41_co2; // wurde bereits in temperatur.h ermittelt
+
+// aufgerufen in mc.ino
+String getCO2()
+{
+  readSCD41(); // in temperatur.h
   return createJsonResponse(String((int)scd41_co2), "ppm", "int", "SCD41");
 }
 

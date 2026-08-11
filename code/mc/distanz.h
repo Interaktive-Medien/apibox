@@ -17,9 +17,13 @@
 
 #include <Adafruit_VL53L0X.h>
 
+// Forward Declaration (in mc.ino definiert)
+// String createJsonResponse(String wert, String einheit, String datentyp, String sensor);
+
 Adafruit_VL53L0X lox = Adafruit_VL53L0X();
 bool loxInitialized = false;
 
+// aufgerufen in mc.ino
 void setupDistanz()
 {
   if (lox.begin())
@@ -34,6 +38,7 @@ void setupDistanz()
   }
 }
 
+// aufgerufen in mc.ino
 String getDistanz()
 {
   int distance = -1;
@@ -47,7 +52,7 @@ String getDistanz()
     }
   }
 
-  return createJsonResponse(String(distance), "mm", "int", "VL53L0X");
+  return createJsonResponse(String(distance), "mm", "int", "VL53L0X"); // in mc.ino
 }
 
 #endif

@@ -18,14 +18,21 @@
 #ifndef RAUCH_H
 #define RAUCH_H
 
-void setupRauch() {
-  analogReadResolution(12);   // 0-4095
+// Forward Declaration (in mc.ino definiert)
+// String createJsonResponse(String wert, String einheit, String datentyp, String sensor);
+
+// aufgerufen in mc.ino
+void setupRauch()
+{
+  analogReadResolution(12); // 0-4095
   Serial.println("MQ-2 Rauchsensor initialisiert.");
 }
 
-String getRauch() {
+// aufgerufen in mc.ino
+String getRauch()
+{
   int gasValue = analogRead(PIN_MQ2);
-  return createJsonResponse(String(gasValue), "analog_value", "int", "MQ-2");
+  return createJsonResponse(String(gasValue), "analog_value", "int", "MQ-2"); // in mc.ino
 }
 
 #endif

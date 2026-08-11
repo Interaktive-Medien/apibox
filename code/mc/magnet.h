@@ -12,16 +12,23 @@
 #ifndef MAGNET_H
 #define MAGNET_H
 
-void setupMagnet() {
+// Forward Declaration (in mc.ino definiert)
+// String createJsonResponse(String wert, String einheit, String datentyp, String sensor);
+
+// aufgerufen in mc.ino
+void setupMagnet()
+{
   pinMode(PIN_MAGNET, INPUT_PULLUP);
   Serial.println("Magnetsensor GPS14-B initialisiert.");
 }
 
-String getMagnet() {
+// aufgerufen in mc.ino
+String getMagnet()
+{
   int state = digitalRead(PIN_MAGNET);
   // LOW = Magnet erkannt (Reed geschlossen), HIGH = kein Magnet
   bool magnetDetected = (state == LOW);
-  return createJsonResponse(magnetDetected ? "true" : "false", "magnet_erkannt", "boolean", "GPS14-B");
+  return createJsonResponse(magnetDetected ? "true" : "false", "magnet_erkannt", "boolean", "GPS14-B"); // in mc.ino
 }
 
 #endif

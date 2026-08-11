@@ -23,6 +23,7 @@
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
+// aufgerufen in mc.ino
 void setupDisplay() {
   if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_I2C_ADDRESS)) {
     Serial.println("SSD1306 nicht gefunden!");
@@ -35,6 +36,7 @@ void setupDisplay() {
   Serial.println("Display initialisiert.");
 }
 
+// aufgerufen in mc.ino, wlan.h
 void displayText(String text) {
   display.clearDisplay();
   display.setTextSize(1);

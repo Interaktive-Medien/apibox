@@ -18,12 +18,18 @@
 
 #include <ICM20948_WE.h>
 
+// Forward Declaration (in mc.ino definiert)
+// String createJsonResponse(String wert, String einheit, String datentyp, String sensor);
+
 #define ICM20948_ADDR 0x68
 ICM20948_WE myIMU = ICM20948_WE(ICM20948_ADDR);
 bool icmInitialized = false;
 
-void setupLage() {
-  if (!myIMU.init()) {
+// aufgerufen in mc.ino
+void setupLage()
+{
+  if (!myIMU.init())
+  {
     Serial.println("ICM20948 nicht gefunden!");
     icmInitialized = false;
     return;
@@ -38,16 +44,21 @@ void setupLage() {
   Serial.println("ICM20948 bereit.");
 }
 
-String getLage() {
+// aufgerufen in mc.ino
+String getLage()
+{
   float x = 0.0, y = 0.0, z = 0.0;
-  if (icmInitialized) {
+  if (icmInitialized)
+  {
     xyzFloat angle;
     myIMU.readSensor();
     myIMU.getAngles(&angle);
-    x = angle.x; y = angle.y; z = angle.z;
+    x = angle.x;
+    y = angle.y;
+    z = angle.z;
   }
   String wert = "{\"x\":" + String(x, 2) + ",\"y\":" + String(y, 2) + ",\"z\":" + String(z, 2) + "}";
-  return createJsonResponse(wert, "°", "object<float,float,float>", "ICM-20948");
+  return createJsonResponse(wert, "°", "object<float,float,float>", "ICM-20948"); // in mc.ino
 }
 
 #endif

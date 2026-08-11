@@ -11,13 +11,13 @@
  *
  *  Board: Waveshare ESP32-C6-N8
  *  Arduino Libraries:
- *    - Adafruit SSD1306 + Adafruit GFX + Adafruit BusIO
- *    - Sensirion I2C SCD4x + Sensirion Core
- *    - BH1750 (Christopher Laws)
- *    - ICM20948_WE (Wolfgang Ewald)
- *    - HX711 Arduino Library (Bogdan Necula)
- *    - Adafruit BMP280 Library
- *    - Adafruit VL53L0X Library
+ *    - OLED DisplayAdafruit SSD1306 + Adafruit GFX + Adafruit BusIO
+ *    - CO2-Sensor: Sensirion I2C SCD4x + Sensirion Core
+ *    - Lichtsensor: BH1750 (Christopher Laws)
+ *    - Lagesensor: ICM20948_WE (Wolfgang Ewald)
+ *    - Waage: HX711 Arduino Library (Bogdan Necula)
+ *    - Luftdruck-Sensor (Höhe)Adafruit BMP280 Library
+ *    - TOF Distanzsensor:VL53L0X Library (Polulu)
  *    - LittleFS (eingebaut)
  *    - Preferences (eingebaut)
  *    - DNSServer (eingebaut)
@@ -52,20 +52,9 @@
  *
  **********************************************************************************************/
 
-#include <WiFi.h>
-#include <WebServer.h>
-#include <Preferences.h>
-#include <DNSServer.h>
 #include <Wire.h>
 #include "FS.h"
 #include "LittleFS.h"
-
-// ======================== JSON Helper ========================
-
-String createJsonResponse(String wert, String einheit, String datentyp, String sensor)
-{
-  return "{\"wert\":" + wert + ",\"einheit\":\"" + einheit + "\",\"datentyp\":\"" + datentyp + "\",\"sensor\":\"" + sensor + "\"}";
-}
 
 // ======================== Pin-Definitionen ========================
 
@@ -78,15 +67,18 @@ String createJsonResponse(String wert, String einheit, String datentyp, String s
 #define PIN_BUTTON_PORTAL 20
 #define PIN_LED BUILTIN_LED
 
-// ======================== Globale Objekte ========================
+// ======================== JSON Helper ========================
 
-WebServer server(80);
-DNSServer dnsServer;
-Preferences preferences;
+// wird aufgerufen in allen sensor-headern (.h-Dateien), damit sie einen einheitlichen JSON-String an den anfragenden Client zurueckgeben koennen
+String createJsonResponse(String wert, String einheit, String datentyp, String sensor)
+{
+  return "{\"wert\":" + wert + ",\"einheit\":\"" + einheit + "\",\"datentyp\":\"" + datentyp + "\",\"sensor\":\"" + sensor + "\"}";
+}
 
-const byte DNS_PORT = 53;
-bool apMode = false;
-bool wlanConnected = false;
+// ======================== Zentrale Header (vor den Sensoren) ========================
+
+#include "display.h" // SSD1306 OLED Display
+#include "wlan.h"    // WLAN Verbindung & Captive Portal (definiert server, preferences etc.)
 
 // ======================== Sensor-Header einbinden ========================
 
@@ -104,11 +96,10 @@ bool wlanConnected = false;
 #include "luftdruck.h"        // BMP280 Luftdruck
 #include "hoehe.h"            // BMP280 Hoehe
 #include "distanz.h"          // VL53L0X Distanz
-#include "display.h"          // SSD1306 OLED Display
-#include "captive_portal.h"   // Captive Portal + WLAN Credentials
 
 // ======================== LittleFS Datei-Handler ========================
 
+// wird aufgerufen in wlan.h: Website-Dateien für Captive Portal aus LittleFS bereitstellen
 bool handleFileRead(String path)
 {
   if (path.endsWith("/"))
@@ -138,81 +129,38 @@ bool handleFileRead(String path)
 
 // ======================== API Endpunkte registrieren ========================
 
+// wird aufgerufen in wlan.h
 void setupAPIRoutes()
 {
-
-  // Sensor-Endpunkte
   server.on("/temperatur", HTTP_GET, []()
-            {
-              server.send(200, "application/json", getTemperatur()); // temperatur.h
-            });
-
+            { server.send(200, "application/json", getTemperatur()); }); // in temperatur.h
   server.on("/luftfeuchtigkeit", HTTP_GET, []()
-            {
-              server.send(200, "application/json", getLuftfeuchtigkeit()); // luftfeuchtigkeit.h
-            });
-
+            { server.send(200, "application/json", getLuftfeuchtigkeit()); }); // in luftfeuchtigkeit.h
   server.on("/co2", HTTP_GET, []()
-            {
-              server.send(200, "application/json", getCO2()); // co2.h
-            });
-
+            { server.send(200, "application/json", getCO2()); }); // in co2.h
   server.on("/bewegung", HTTP_GET, []()
-            {
-              server.send(200, "application/json", getBewegung()); // bewegung.h
-            });
-
+            { server.send(200, "application/json", getBewegung()); }); // in bewegung.h
   server.on("/lautstaerke", HTTP_GET, []()
-            {
-              server.send(200, "application/json", getLautstaerke()); // lautstaerke.h
-            });
-
+            { server.send(200, "application/json", getLautstaerke()); }); // in lautstaerke.h
   server.on("/magnet", HTTP_GET, []()
-            {
-              server.send(200, "application/json", getMagnet()); // magnet.h
-            });
-
+            { server.send(200, "application/json", getMagnet()); }); // in magnet.h
   server.on("/helligkeit", HTTP_GET, []()
-            {
-              server.send(200, "application/json", getHelligkeit()); // helligkeit.h
-            });
-
+            { server.send(200, "application/json", getHelligkeit()); }); // in helligkeit.h
   server.on("/alkohol", HTTP_GET, []()
-            {
-              server.send(200, "application/json", getAlkohol()); // alkohol.h
-            });
-
+            { server.send(200, "application/json", getAlkohol()); }); // in alkohol.h
   server.on("/lage", HTTP_GET, []()
-            {
-              server.send(200, "application/json", getLage()); // lage.h
-            });
-
+            { server.send(200, "application/json", getLage()); }); // in lage.h
   server.on("/gewicht", HTTP_GET, []()
-            {
-              server.send(200, "application/json", getGewicht()); // gewicht.h
-            });
-
+            { server.send(200, "application/json", getGewicht()); }); // in gewicht.h
   server.on("/rauch", HTTP_GET, []()
-            {
-              server.send(200, "application/json", getRauch()); // rauch.h
-            });
-
+            { server.send(200, "application/json", getRauch()); }); // in rauch.h
   server.on("/luftdruck", HTTP_GET, []()
-            {
-              server.send(200, "application/json", getLuftdruck()); // luftdruck.h
-            });
-
+            { server.send(200, "application/json", getLuftdruck()); }); // in luftdruck.h
   server.on("/hoehe", HTTP_GET, []()
-            {
-              server.send(200, "application/json", getHoehe()); // hoehe.h
-            });
-
+            { server.send(200, "application/json", getHoehe()); }); // in hoehe.h
   server.on("/distanz", HTTP_GET, []()
-            {
-              server.send(200, "application/json", getDistanz()); // distanz.h
-            });
+            { server.send(200, "application/json", getDistanz()); }); // in distanz.h
 
-  // Uebersicht aller Endpunkte
   server.on("/api", HTTP_GET, []()
             {
     String json = "{\"info\":\"API Box - ESP32-C6 Sensor API\",\"endpoints\":["
@@ -222,7 +170,6 @@ void setupAPIRoutes()
                   "\"/hoehe\",\"/distanz\"]}";
     server.send(200, "application/json", json); });
 
-  // LittleFS Fallback fuer statische Dateien (HTML/CSS/JS)
   server.onNotFound([]()
                     {
     if (!handleFileRead(server.uri())) {
@@ -237,110 +184,39 @@ void setup()
   Serial.begin(115200);
   delay(1000);
 
-  // Status-LED
   pinMode(PIN_LED, OUTPUT);
-  rgbLedWrite(PIN_LED, 0, 255, 0); // Rot = noch nicht verbunden
+  rgbLedWrite(PIN_LED, 0, 255, 0); // Rot
 
-  // I2C Bus starten
   Wire.begin(I2C_SDA, I2C_SCL);
+  setupDisplay();                   // in display.h
+  displayText("Starte API Box..."); // in display.h
 
-  // Display initialisieren
-  setupDisplay();                   // display.h
-  displayText("Starte API Box..."); // display.h
-
-  // LittleFS initialisieren
   if (!LittleFS.begin(true))
   {
     Serial.println("LittleFS Mount fehlgeschlagen!");
-    displayText("LittleFS Fehler!");
+    displayText("LittleFS Fehler!"); // in display.h
   }
 
-  // Sensoren initialisieren
-  setupTemperatur();  // temperatur.h
-  setupBewegung();    // bewegung.h
-  setupLautstaerke(); // lautstaerke.h
-  setupMagnet();      // magnet.h
-  setupHelligkeit();  // helligkeit.h
-  setupAlkohol();     // alkohol.h
-  setupLage();        // lage.h
-  setupGewicht();     // gewicht.h
-  setupRauch();       // rauch.h
-  setupLuftdruck();   // luftdruck.h
-  setupDistanz();     // distanz.h
+  Serial.println("\n-----------------------------\nInitialisiere Sensoren...");
+  setupTemperatur();  // in temperatur.h
+  setupBewegung();    // in bewegung.h
+  setupLautstaerke(); // in lautstaerke.h
+  setupMagnet();      // in magnet.h
+  setupHelligkeit();  // in helligkeit.h
+  setupAlkohol();     // in alkohol.h
+  setupLage();        // in lage.h
+  setupGewicht();     // in gewicht.h
+  setupRauch();       // in rauch.h
+  setupLuftdruck();   // in luftdruck.h
+  setupDistanz();     // in distanz.h
 
-  // Captive Portal Taster
-  setupPortalButton(); // captive_portal.h
-
-  // WLAN Verbindung herstellen
-  displayText("Suche bekanntes\nWLAN Netzwerk...");
-  bool connected = connectToSavedWiFi(); // captive_portal.h
-
-  if (connected)
-  {
-    apMode = false;
-    wlanConnected = true;
-    rgbLedWrite(PIN_LED, 255, 0, 0); // Gruen = verbunden
-
-    String info = "Verbunden mit\n" + WiFi.SSID() + "\n\nIP Adresse:\n" + WiFi.localIP().toString();
-    displayText(info);
-    Serial.printf("Verbunden: %s, IP: %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
-
-    // API Endpunkte und Webserver starten
-    setupAPIRoutes();
-    server.begin();
-    Serial.println("HTTP Webserver gestartet.");
-  }
-  else
-  {
-    startCaptivePortal(); // captive_portal.h
-    apMode = true;
-    wlanConnected = false;
-    rgbLedWrite(PIN_LED, 0, 255, 0); // Rot = AP Modus
-  }
+  setupPortalButton(); // in wlan.h
+  setupWLAN();         // in wlan.h
 }
 
 // ======================== Loop ========================
 
 void loop()
 {
-  // DNS im AP-Modus
-  if (apMode)
-  {
-    dnsServer.processNextRequest();
-  }
-
-  // Webserver-Anfragen verarbeiten
-  server.handleClient();
-
-  // Taster pruefen: Captive Portal manuell starten
-  if (checkPortalButton())
-  { // captive_portal.h
-    Serial.println("Taster gedrueckt -> Captive Portal starten");
-    displayText("Captive Portal\nwird gestartet...");
-    startCaptivePortal(); // captive_portal.h
-    apMode = true;
-    wlanConnected = false;
-    rgbLedWrite(PIN_LED, 0, 255, 0); // Rot
-  }
-
-  // Reconnect im STA-Modus bei Verbindungsverlust
-  if (!apMode && WiFi.status() != WL_CONNECTED)
-  {
-    if (wlanConnected)
-    {
-      Serial.println("WLAN Verbindung verloren, reconnect...");
-      displayText("WLAN verloren...\nReconnect...");
-      rgbLedWrite(PIN_LED, 0, 255, 0); // Rot
-      wlanConnected = false;
-    }
-    WiFi.reconnect();
-    delay(5000);
-    if (WiFi.status() == WL_CONNECTED)
-    {
-      wlanConnected = true;
-      rgbLedWrite(PIN_LED, 255, 0, 0); // Gruen
-      String info = "Verbunden mit\n" + WiFi.SSID() + "\n\nIP Adresse:\n" + WiFi.localIP().toString();
-      displayText(info);
-    }
-  }
+  maintainWiFiConnection(); // in wlan.h
 }

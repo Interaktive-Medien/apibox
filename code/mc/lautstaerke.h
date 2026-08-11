@@ -23,18 +23,25 @@
 
 #include <driver/i2s.h>
 #include <math.h>
+#include <Preferences.h>
 
-#define I2S_WS          23
-#define I2S_SD          13
-#define I2S_SCK         2
-#define I2S_PORT        I2S_NUM_0
+// Forward Declaration (in mc.ino definiert)
+// String createJsonResponse(String wert, String einheit, String datentyp, String sensor);
 
-#define SAMPLE_RATE     16000
+// Externer Zugriff auf Preferences (in wlan.h definiert)
+extern Preferences preferences;
+
+#define I2S_WS 23
+#define I2S_SD 13
+#define I2S_SCK 2
+#define I2S_PORT I2S_NUM_0
+
+#define SAMPLE_RATE 16000
 #define BITS_PER_SAMPLE I2S_BITS_PER_SAMPLE_32BIT
 
 const int LS_DMA_BUF_COUNT = 8;
-const int LS_DMA_BUF_LEN   = 1024;
-const int LS_BUFFER_SIZE   = 512;
+const int LS_DMA_BUF_LEN = 1024;
+const int LS_BUFFER_SIZE = 512;
 int32_t ls_samples[LS_BUFFER_SIZE];
 
 float smoothedSPL = 0;
@@ -43,33 +50,34 @@ const float ls_filterFactor = 0.1;
 // dB-Shift aus Preferences (Variable: kalibrationsfaktor_lautstaerke)
 float kalibrationsfaktor_lautstaerke = 122.0;
 
-void setupLautstaerke() {
+// aufgerufen in mc.ino
+void setupLautstaerke()
+{
   // Kalibrationsfaktor laden
-  preferences.begin("calib", true);                                   // global aus mc.ino
+  preferences.begin("calib", true); // in wlan.h
   kalibrationsfaktor_lautstaerke = preferences.getFloat("kf_lautst", 122.0);
   preferences.end();
 
   i2s_config_t i2s_config = {
-    .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
-    .sample_rate = SAMPLE_RATE,
-    .bits_per_sample = BITS_PER_SAMPLE,
-    .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
-    .communication_format = I2S_COMM_FORMAT_STAND_I2S,
-    .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-    .dma_buf_count = LS_DMA_BUF_COUNT,
-    .dma_buf_len = LS_DMA_BUF_LEN,
-    .use_apll = false
-  };
+      .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
+      .sample_rate = SAMPLE_RATE,
+      .bits_per_sample = BITS_PER_SAMPLE,
+      .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
+      .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+      .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+      .dma_buf_count = LS_DMA_BUF_COUNT,
+      .dma_buf_len = LS_DMA_BUF_LEN,
+      .use_apll = false};
 
   i2s_pin_config_t pin_config = {
-    .mck_io_num = I2S_PIN_NO_CHANGE,
-    .bck_io_num = I2S_SCK,
-    .ws_io_num = I2S_WS,
-    .data_out_num = I2S_PIN_NO_CHANGE,
-    .data_in_num = I2S_SD
-  };
+      .mck_io_num = I2S_PIN_NO_CHANGE,
+      .bck_io_num = I2S_SCK,
+      .ws_io_num = I2S_WS,
+      .data_out_num = I2S_PIN_NO_CHANGE,
+      .data_in_num = I2S_SD};
 
-  if (i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL) != ESP_OK) {
+  if (i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL) != ESP_OK)
+  {
     Serial.println("INMP441 I2S Installation fehlgeschlagen!");
     return;
   }
@@ -81,15 +89,18 @@ void setupLautstaerke() {
 }
 
 // Misst aktuellen Schallpegel in dB (SPL)
-float readDB() {
+float readDB()
+{
   size_t bytesRead = 0;
   esp_err_t result = i2s_read(I2S_PORT, &ls_samples, sizeof(ls_samples), &bytesRead, portMAX_DELAY);
 
-  if (result == ESP_OK && bytesRead > 0) {
+  if (result == ESP_OK && bytesRead > 0)
+  {
     int samplesCount = bytesRead / 4;
     float sumSq = 0;
 
-    for (int i = 0; i < samplesCount; i++) {
+    for (int i = 0; i < samplesCount; i++)
+    {
       int32_t val = ls_samples[i] >> 8;
       float floatSample = (float)val / 8388608.0;
       sumSq += (floatSample * floatSample);
@@ -97,11 +108,14 @@ float readDB() {
 
     float rms = sqrt(sumSq / samplesCount);
     float db = 20.0 * log10(rms + 1e-9);
-    float spl = db + kalibrationsfaktor_lautstaerke;   // Shift aus Preferences
+    float spl = db + kalibrationsfaktor_lautstaerke; // Shift aus Preferences
 
-    if (smoothedSPL == 0) {
+    if (smoothedSPL == 0)
+    {
       smoothedSPL = spl;
-    } else {
+    }
+    else
+    {
       smoothedSPL = (spl * ls_filterFactor) + (smoothedSPL * (1.0 - ls_filterFactor));
     }
     return smoothedSPL;
@@ -109,9 +123,11 @@ float readDB() {
   return smoothedSPL;
 }
 
-String getLautstaerke() {
+// aufgerufen in mc.ino
+String getLautstaerke()
+{
   float dB = readDB();
-  return createJsonResponse(String(dB, 2), "dB", "float", "INMP441");
+  return createJsonResponse(String(dB, 2), "dB", "float", "INMP441"); // in mc.ino
 }
 
 #endif

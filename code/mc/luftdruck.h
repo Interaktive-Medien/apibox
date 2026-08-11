@@ -18,15 +18,21 @@
 
 #include <Adafruit_BMP280.h>
 
-Adafruit_BMP280 bmp;            // gemeinsames Objekt fuer Luftdruck + Hoehe
+// Forward Declaration (in mc.ino definiert)
+// String createJsonResponse(String wert, String einheit, String datentyp, String sensor);
+
+Adafruit_BMP280 bmp; // gemeinsames Objekt fuer Luftdruck + Hoehe
 bool bmpInitialized = false;
 
 // Referenz-Luftdruck auf Meereshoehe (fuer Hoehenberechnung in hoehe.h)
 const float SEALEVEL_HPA = 1013.25;
 
-void setupLuftdruck() {
+// aufgerufen in mc.ino
+void setupLuftdruck()
+{
   // BMP280 I2C-Adresse meist 0x76, manche Boards 0x77
-  if (bmp.begin(0x76) || bmp.begin(0x77)) {
+  if (bmp.begin(0x76) || bmp.begin(0x77))
+  {
     bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,
                     Adafruit_BMP280::SAMPLING_X2,
                     Adafruit_BMP280::SAMPLING_X16,
@@ -34,15 +40,19 @@ void setupLuftdruck() {
                     Adafruit_BMP280::STANDBY_MS_500);
     bmpInitialized = true;
     Serial.println("BMP280 initialisiert.");
-  } else {
+  }
+  else
+  {
     bmpInitialized = false;
     Serial.println("BMP280 nicht gefunden!");
   }
 }
 
-String getLuftdruck() {
+// aufgerufen in mc.ino
+String getLuftdruck()
+{
   float hPa = bmpInitialized ? (bmp.readPressure() / 100.0F) : -1.0;
-  return createJsonResponse(String(hPa, 2), "hPa", "float", "BMP280");
+  return createJsonResponse(String(hPa, 2), "hPa", "float", "BMP280"); // in mc.ino
 }
 
 #endif
