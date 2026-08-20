@@ -2,6 +2,7 @@
  *  luftfeuchtigkeit.h
  *  SCD41 Luftfeuchtigkeit via I2C
  *  Library: Sensirion I2C SCD4x (bereits in temperatur.h initialisiert)
+ *  Werte als JSON-String abrufen: http://[IP_ADRESSE]/luftfeuchtigkeit
  *
  *  Anschluss: I2C (GPIO6: SDA, GPIO7: SCL)
  *  Nutzt die gemeinsamen SCD41-Variablen aus temperatur.h

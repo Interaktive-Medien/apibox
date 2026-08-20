@@ -133,7 +133,7 @@ bool handleFileRead(String path)
 void setupAPIRoutes()
 {
   server.on("/temperatur", HTTP_GET, []()
-            { server.send(200, "application/json", getTemperatur()); }); // in temperatur.h
+            { server.send(200, "application/json", getTemperatur()); }); // in temperatur.h, gemessen mit SCD41
   server.on("/luftfeuchtigkeit", HTTP_GET, []()
             { server.send(200, "application/json", getLuftfeuchtigkeit()); }); // in luftfeuchtigkeit.h
   server.on("/co2", HTTP_GET, []()

@@ -37,6 +37,13 @@ void setupTemperatur()
 {
   scd4x.begin(Wire, SCD41_I2C_ADDR_62);
 
+  // Teste I2C-Verbindung zum SCD41
+  Wire.beginTransmission(0x62);
+  int wireErr = Wire.endTransmission();
+  Serial.print("Wire.endTransmission: ");
+  Serial.println(wireErr);
+  // Ende Test
+
   uint16_t error = scd4x.startPeriodicMeasurement();
   if (error)
   {

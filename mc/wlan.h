@@ -28,9 +28,9 @@ bool portalRoutesRegistered = false;
 #define PIN_LED BUILTIN_LED
 
 // Forward Declarations für Funktionen aus anderen Headern/Dateien
-void displayText(String text); // in display.h
+void displayText(String text);    // in display.h
 bool handleFileRead(String path); // in mc.ino
-void setupAPIRoutes(); // in mc.ino
+void setupAPIRoutes();            // in mc.ino
 
 // ---------------------------------------------------------------------------
 // Taster (GPIO20) zum manuellen Start des Captive Portals
@@ -70,16 +70,17 @@ void handlePortalRoot()
 void handlePortalSave()
 {
   String mode = server.hasArg("mode") ? server.arg("mode") : "home";
-  String ssid = server.hasArg("ssid_privat") ? server.arg("ssid_privat") : 
-                (server.hasArg("ssid_schule") ? server.arg("ssid_schule") : "");
-  String pass = server.hasArg("pass_privat") ? server.arg("pass_privat") : 
-                (server.hasArg("pass_schule") ? server.arg("pass_schule") : "");
+  String ssid = server.hasArg("ssid_privat") ? server.arg("ssid_privat") : (server.hasArg("ssid_schule") ? server.arg("ssid_schule") : "");
+  String pass = server.hasArg("pass_privat") ? server.arg("pass_privat") : (server.hasArg("pass_schule") ? server.arg("pass_schule") : "");
   String user = server.hasArg("user_schule") ? server.arg("user_schule") : "";
 
   // Falls generische Namen verwendet werden (Fallback)
-  if (ssid == "" && server.hasArg("ssid")) ssid = server.arg("ssid");
-  if (pass == "" && server.hasArg("pass")) pass = server.arg("pass");
-  if (user == "" && server.hasArg("user")) user = server.arg("user");
+  if (ssid == "" && server.hasArg("ssid"))
+    ssid = server.arg("ssid");
+  if (pass == "" && server.hasArg("pass"))
+    pass = server.arg("pass");
+  if (user == "" && server.hasArg("user"))
+    user = server.arg("user");
 
   preferences.begin("wifi", false);
   preferences.putString("mode", mode);
@@ -124,11 +125,11 @@ void startCaptivePortal()
   {
     server.on("/", HTTP_GET, handlePortalRoot);
     server.on("/save", HTTP_POST, handlePortalSave);
-    server.onNotFound([]() {
+    server.onNotFound([]()
+                      {
       if (!handleFileRead(server.uri())) { // in mc.ino
         handlePortalRoot();
-      }
-    });
+      } });
     portalRoutesRegistered = true;
   }
   server.begin();
@@ -167,31 +168,42 @@ bool connectToSavedWiFi()
   preferences.end();
 
   String ssid, pass, user;
-  if (mode == "school") {
-    ssid = ssid_s; user = user_s; pass = pass_s;
-  } else {
-    ssid = ssid_p; pass = pass_p;
+  if (mode == "school")
+  {
+    ssid = ssid_s;
+    user = user_s;
+    pass = pass_s;
+  }
+  else
+  {
+    ssid = ssid_p;
+    pass = pass_p;
   }
 
-  if (ssid == "") return false;
+  if (ssid == "")
+    return false;
 
   Serial.printf("Verbinde mit WLAN: %s (%s)\n", ssid.c_str(), mode.c_str());
   WiFi.disconnect(true);
   WiFi.mode(WIFI_STA);
 
-  if (mode == "school") {
+  if (mode == "school")
+  {
     esp_eap_client_set_identity((uint8_t *)user.c_str(), user.length());
     esp_eap_client_set_username((uint8_t *)user.c_str(), user.length());
     esp_eap_client_set_password((uint8_t *)pass.c_str(), pass.length());
     esp_eap_client_set_disable_time_check(true);
     esp_wifi_sta_enterprise_enable();
     WiFi.begin(ssid.c_str());
-  } else {
+  }
+  else
+  {
     WiFi.begin(ssid.c_str(), pass.c_str());
   }
 
   int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+  while (WiFi.status() != WL_CONNECTED && attempts < 20)
+  {
     delay(500);
     Serial.print(".");
     attempts++;
@@ -222,7 +234,7 @@ void maintainWiFiConnection()
     {
       Serial.println("WLAN Verbindung verloren, reconnect...");
       displayText("WLAN verloren...\nReconnect..."); // in display.h
-      rgbLedWrite(PIN_LED, 0, 255, 0); // Rot
+      rgbLedWrite(PIN_LED, 0, 255, 0);               // Rot
       wlanConnected = false;
     }
     WiFi.reconnect();
@@ -238,10 +250,11 @@ void maintainWiFiConnection()
 }
 
 // aufgerufen in mc.ino
-void setupWLAN() {
+void setupWLAN()
+{
   displayText("Suche bekanntes\nWLAN Netzwerk..."); // in display.h
   Serial.println("\n-----------------------------\nSuche bekanntes WLAN Netzwerk...");
-  
+
   if (connectToSavedWiFi())
   {
     apMode = false;
@@ -253,7 +266,7 @@ void setupWLAN() {
     Serial.printf("Verbunden: %s, IP: %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
 
     // API Endpunkte und Webserver starten
-    setupAPIRoutes(); // in mc.ino
+    setupAPIRoutes(); // in mc.ino: roting der API-Endpunkte, z.B. http://[IP]/temperatur -> getTemperatur() in temperatur.h
     server.begin();
     Serial.println("HTTP Webserver gestartet.");
   }
