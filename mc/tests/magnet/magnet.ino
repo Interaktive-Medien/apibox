@@ -3,7 +3,7 @@
  * GPS14-B Magnetsensor (Reed) — Tuer offen/zu. Gibt Zustand auf dem Serial Port aus.
  * Demo-Code (basiert auf 00_Button.ino) als Referenz fuer mc/magnet.h.
  * Keine Library noetig.
- * Sensor: Pin1<->GPIO11  Pin2<->GND   (INPUT_PULLUP: LOW = Magnet erkannt)
+ * Sensor: Pin1<->GPIO11  Pin2<->GND   (INPUT_PULLDOWN: HIGH = Magnet erkannt)
  ******************************************************************************************************/
 
 const int magnetPin = 11;
@@ -12,7 +12,7 @@ int prev_magnetstate = -1;
 
 void setup() {
   Serial.begin(115200);
-  pinMode(magnetPin, INPUT_PULLUP);
+  pinMode(magnetPin, INPUT_PULLDOWN);
 }
 
 void loop() {

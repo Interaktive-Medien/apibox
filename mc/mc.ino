@@ -1,4 +1,4 @@
-/**********************************************************************************************
+/******************************************************************************
  *  mc.ino — API Box Hauptprogramm
  *  ESP32-C6 IoT Sensor API Server
  *
@@ -50,7 +50,7 @@
  *  GPIO6/7 (das ist der I2C-Bus!), sondern auf GPIO21 (DT) / GPIO22 (SCK).
  *  HX711 ist kein I2C-Geraet und wuerde den I2C-Bus stoeren. Siehe gewicht.h.
  *
- **********************************************************************************************/
+ *****************************************************************************/
 
 #include <Wire.h>
 #include "FS.h"
@@ -80,13 +80,12 @@ int intervall_ms = 15000;
 #include "co2_temperatur_luftfeuchtigkeit.h" // SCD41 CO2, Temperatur, Luftfeuchtigkeit
 #include "distanz.h"                         // VL53L0X Distanz
 #include "gewicht.h"                         // HX711 Waage
-// #include "lautstaerke.h"      // INMP441 Mikrofon
-// #include "magnet.h"           // GPS14-B Magnetsensor
-// #include "helligkeit.h"       // BH1750 Lichtsensor
-// #include "lage.h"             // ICM-20948 9DOF
-// #include "rauch.h"            // MQ-2 Gas/Rauch
-// #include "luftdruck.h"        // BMP280 Luftdruck
-// #include "hoehe.h"            // BMP280 Hoehe
+#include "gps.h"                             // NEO8M
+#include "helligkeit.h"                      // BH1750 Lichtsensor
+#include "lage.h"                            // ICM-20948 9DOF
+#include "lautstaerke.h"                     // INMP441 Mikrofon
+#include "luftdruck.h"                       // BMP280 Luftdruck
+#include "magnet.h"                          // GPS14-B Magnetsensor
 
 // ======================== LittleFS Datei-Handler ========================
 
@@ -144,11 +143,12 @@ void setup()
   setupCo2_Temperatur_Luftfeuchtigkeit(); // co2_temperatur_luftfeuchtigkeit.h
   setupDistanz();                         // in distanz.h
   setupGewicht();                         // in gewicht.h
-  // setupLautstaerke(); // in lautstaerke.h
-  // setupMagnet();      // in magnet.h
-  // setupHelligkeit();  // in helligkeit.h
-  // setupLage();        // in lage.h
-  // setupLuftdruck();   // in luftdruck.h
+  setupGPS();                             // in gps.h
+  setupHelligkeit();                      // in helligkeit.h
+  setupLage();                            // in lage.h
+  setupLautstaerke();                     // in lautstaerke.h
+  setupLuftdruck();                       // in luftdruck.h
+  setupMagnet();                          // in magnet.h
 
   setupPortalButton(); // in wlan.h
   setupWLAN();         // in wlan.h
@@ -180,23 +180,49 @@ void loop()
   float gewicht = getGewicht(); // in gewicht.h
   Serial.printf("Gewicht: %.2f g\n", gewicht);
 
-  // String jsonResponse = "{\"temperatur\":" + String(temperatur) +
-  //                       ",\"luftfeuchtigkeit\":" + String(luftfeuchtigkeit) +
-  //                       ",\"bewegung\":" + String(bewegung) +
-  //                       ",\"lautstaerke\":" + String(lautstaerke) +
-  //                       ",\"magnet\":" + String(magnet) +
-  //                       ",\"helligkeit\":" + String(helligkeit) +
-  //                       ",\"alkohol\":" + String(alkohol) +
-  //                       ",\"lage_x\":" + String(lage_x) +
-  //                       ",\"lage_y\":" + String(lage_y) +
-  //                       ",\"gewicht\":" + String(gewicht) +
-  //                       ",\"co2\":" + String(co2) +
-  //                       ",\"luftdruck\":" + String(luftdruck) +
-  //                       ",\"distanz\":" + String(distanz) +
-  //                       ",\"latitude\":" + String(latitude, 5) +
-  //                       ",\"longitude\":" + String(longitude, 5) +
-  //                       ",\"altitude\":" + String(altitude) +
-  //                       ",\"gps_time\":\"" + gps_time + "\"" +
-  //                       ",\"gps_num_satellites\":" + String(gps_num_satellites) +
-  //                       "}";
+  getGPS(); // in gps.h
+  Serial.printf("Latitude: %.6f°\n", latitude);
+  Serial.printf("Longitude: %.6f°\n", longitude);
+  Serial.printf("Altitude: %.2f m\n", altitude);
+  Serial.printf("Satelliten: %d\n", satellites);
+  Serial.printf("timeString: %s\n", timeString.c_str());
+
+  float helligkeit = getHelligkeit(); // in helligkeit.h
+  Serial.printf("Helligkeit: %.2f lux\n", helligkeit);
+
+  getLage(); // in lage.h
+  Serial.printf("lage_x: %.2f\n", lage_x);
+  Serial.printf("lage_y: %.2f\n", lage_y);
+
+  float lautstaerke = getLautstaerke(); // in lautstaerke.h
+  Serial.printf("Lautstärke: %.2f dB\n", lautstaerke);
+
+  float luftdruck = getLuftdruck(); // in luftdruck.h
+  Serial.printf("Luftdruck: %.2f hPa\n", luftdruck);
+
+  int magnet = getMagnet(); // in magnet.h
+  Serial.printf("Magnet: %.2f\n", magnet);
+
+  String jsonResponse = "{\"alkohol\":" + String(alkohol) +
+                        ",\"bewegung\":" + String(bewegung) +
+                        ",\"co2\":" + String(co2) +
+                        ",\"temperatur\":" + String(temperature) +
+                        ",\"luftfeuchtigkeit\":" + String(humidity) +
+                        ",\"distanz\":" + String(distanz) +
+                        ",\"gewicht\":" + String(gewicht) +
+                        ",\"latitude\":" + String(latitude) +
+                        ",\"longitude\":" + String(longitude) +
+                        ",\"altitude\":" + String(altitude) +
+                        ",\"gps_num_satellites\":" + String(satellites) +
+                        ",\"gps_time\":\"" + timeString +
+                        ",\"helligkeit\":\"" + String(helligkeit) +
+                        ",\"lage_x\":" + String(lage_x) +
+                        ",\"lage_y\":" + String(lage_y) +
+                        ",\"lautstaerke\":" + String(lautstaerke) +
+                        ",\"luftdruck\":" + String(luftdruck) +
+                        ",\"magnet\":" + String(magnet) +
+                        "}";
+
+  Serial.println(jsonResponse);
+  // sende JSON String an set.php auf em Server.
 }

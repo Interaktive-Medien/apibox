@@ -1,4 +1,4 @@
-/**********************************************************************************************
+/******************************************************************************
  *  helligkeit.h
  *  BH1750 Lichtsensor (Beleuchtungsstaerke in Lux) via I2C
  *  Library: BH1750 von Christopher Laws
@@ -8,15 +8,12 @@
  *  Sensor: GND  <->  ESP32-C6: GND
  *  Sensor: SDA  <->  ESP32-C6: GPIO6
  *  Sensor: SCL  <->  ESP32-C6: GPIO7
- **********************************************************************************************/
+ *****************************************************************************/
 
 #ifndef HELLIGKEIT_H
 #define HELLIGKEIT_H
 
 #include <BH1750.h>
-
-// Forward Declaration (in mc.ino definiert)
-// String createJsonResponse(String wert, String einheit, String datentyp, String sensor);
 
 BH1750 lightMeter;
 bool bh1750Initialized = false;
@@ -38,10 +35,10 @@ void setupHelligkeit()
 }
 
 // aufgerufen in mc.ino
-String getHelligkeit()
+float getHelligkeit()
 {
   float lux = bh1750Initialized ? lightMeter.readLightLevel() : -1.0;
-  return createJsonResponse(String(lux, 2), "lx", "float", "BH1750"); // in mc.ino
+  return lux;
 }
 
 #endif

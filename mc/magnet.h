@@ -1,4 +1,4 @@
-/**********************************************************************************************
+/******************************************************************************
  *  magnet.h
  *  GPS14-B Magnetsensor (Reed-Kontakt) — Tuer offen/zu Erkennung
  *  Keine Library erforderlich.
@@ -6,29 +6,27 @@
  *  Anschluss:
  *  Sensor: Pin1  <->  ESP32-C6: GPIO11
  *  Sensor: Pin2  <->  ESP32-C6: GND
- *  (INPUT_PULLUP: HIGH = kein Magnet, LOW = Magnet erkannt)
- **********************************************************************************************/
+ *  Sensor: Pin1<->GPIO11  Pin2<->GND   (INPUT_PULLDOWN: HIGH = Magnet erkannt)
+ *****************************************************************************/
 
 #ifndef MAGNET_H
 #define MAGNET_H
 
-// Forward Declaration (in mc.ino definiert)
-// String createJsonResponse(String wert, String einheit, String datentyp, String sensor);
+const int magnetPin = 11;
+int magnetstate = 0;
 
 // aufgerufen in mc.ino
 void setupMagnet()
 {
-  pinMode(PIN_MAGNET, INPUT_PULLUP);
+  pinMode(magnetPin, INPUT_PULLDOWN);
   Serial.println("Magnetsensor GPS14-B initialisiert.");
 }
 
 // aufgerufen in mc.ino
-String getMagnet()
+int getMagnet()
 {
-  int state = digitalRead(PIN_MAGNET);
-  // LOW = Magnet erkannt (Reed geschlossen), HIGH = kein Magnet
-  bool magnetDetected = (state == LOW);
-  return createJsonResponse(magnetDetected ? "true" : "false", "magnet_erkannt", "boolean", "GPS14-B"); // in mc.ino
+  magnetstate = digitalRead(magnetPin);
+  return magnetstate;
 }
 
 #endif

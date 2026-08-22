@@ -2,8 +2,13 @@
 * luftdruck.ino  (Test/Demo)
 * BMP280 Luftdruckmessung
 * Library: "Adafruit BMP280 Library" (+ Adafruit Unified Sensor)
-* Sensor: VCC<->3.3V  GND<->GND  SDA<->GPIO6  SCL<->GPIO7
-* Achtung_ Höhe wird aus dem Luftdruck berechnet. In GR gehen wir von einem Luftdruck von 1019hPa auf Meereshöhe aus. Kann je nach Wetter variieren.
+
+ *  Anschluss:
+ *  Sensor: VCC  <->  ESP32-C6: 3.3V
+ *  Sensor: GND  <->  ESP32-C6: GND
+ *  Sensor: SDA  <->  ESP32-C6: GPIO6
+ *  Sensor: SCL  <->  ESP32-C6: GPIO7
+
 ***********************************************************************************************/
 
 #include <Wire.h>
