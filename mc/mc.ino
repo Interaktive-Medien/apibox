@@ -75,11 +75,11 @@ int intervall_ms = 15000;
 
 // ======================== Sensor-Header einbinden ========================
 
-#include "alkohol.h" // MQ-3 Alkoholsensor
+#include "alkohol.h"  // MQ-3 Alkoholsensor
+#include "bewegung.h" // SR602 PIR
 // #include "temperatur.h"       // SCD41 Temperatur
 // #include "luftfeuchtigkeit.h" // SCD41 Luftfeuchtigkeit
 // #include "co2.h"              // SCD41 CO2
-// #include "bewegung.h"         // SR602 PIR
 // #include "lautstaerke.h"      // INMP441 Mikrofon
 // #include "magnet.h"           // GPS14-B Magnetsensor
 // #include "helligkeit.h"       // BH1750 Lichtsensor
@@ -141,9 +141,9 @@ void setup()
   }
 
   Serial.println("\n-----------------------------\nInitialisiere Sensoren...");
-  setupAlkohol(); // in alkohol.h
+  setupAlkohol();  // in alkohol.h
+  setupBewegung(); // in bewegung.h
   // setupTemperatur();  // in temperatur.h
-  // setupBewegung();    // in bewegung.h
   // setupLautstaerke(); // in lautstaerke.h
   // setupMagnet();      // in magnet.h
   // setupHelligkeit();  // in helligkeit.h
@@ -168,6 +168,9 @@ void loop()
 
   float alkohol = getAlkohol(); // in alkohol.h
   Serial.printf("Alkohol: %.2f mg/L\n", alkohol);
+
+  int bewegung = getBewegung(); // in bewegung.h
+  Serial.printf("Bewegung: %d\n", bewegung);
 
   // String jsonResponse = "{\"temperatur\":" + String(temperatur) +
   //                       ",\"luftfeuchtigkeit\":" + String(luftfeuchtigkeit) +

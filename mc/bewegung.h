@@ -15,18 +15,21 @@
 // Forward Declaration (in mc.ino definiert)
 // String createJsonResponse(String wert, String einheit, String datentyp, String sensor);
 
+const int pirPin = 4;
+int pir_state = 0;
+
 // aufgerufen in mc.ino
 void setupBewegung()
 {
-  pinMode(PIN_PIR, INPUT);
+  pinMode(pirPin, INPUT);
   Serial.println("PIR SR602 initialisiert.");
 }
 
 // aufgerufen in mc.ino
-String getBewegung()
+int getBewegung()
 {
-  int state = digitalRead(PIN_PIR);
-  return createJsonResponse((state == HIGH) ? "true" : "false", "bewegung", "boolean", "SR602");
+  pir_state = digitalRead(pirPin);
+  return pir_state;
 }
 
 #endif
