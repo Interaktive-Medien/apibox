@@ -3,70 +3,119 @@
  *  Kommunikation zw. GPS-Modul und ESP32-C6 via UART
  *  Installiere Library TinyGPSPlus by Mikal Hart
  *  Verbinde:
- *  GPS-Modul: TX  <-> ESP32-C6: GPIO6 (RX)
- *  GPS-Modul: RX  <-> ESP32-C6: GPIO7 (TX)
+ *  GPS-Modul: TX  <-> ESP32-C6: GPIO19 (RX)
+ *  GPS-Modul: RX  <-> ESP32-C6: GPIO18 (TX)
  *  GPS-Modul: Vcc <-> ESP32-C6: 3V3
  *  GPS-Modul: GND <-> ESP32-C6: GND
  *  sollte das GPS Modul noch weitere Pins haben, einfach ignorieren
- *  GitHub: https://github.com/Interaktive-Medien/im_physical_computing/blob/main/09_Sensoren_testen/14_GPS/14_GPS.ino
+
+ Wenn das GPS Modul sekündlich blau blinkt, wird ein GPS Signal empfangen.
+ Die quadratische Keramikantenne muss mut dem Punkt nach oben positioniert werden. Glatte Seite unten.
+ Ausgabe: 
+ 
+ Breitengrad: 0.000000
+ Längengrad: 0.000000
+ Höhe: 0.00 m
+ Satelliten: 0
+ Zeit/Datum: 2026-08-22 15:53:34
  ***************************************************/
+
+
 
 #include <TinyGPS++.h>
 #include <HardwareSerial.h>
+#include <Preferences.h>
 
 // Instanz der TinyGPS++ Bibliothek
 TinyGPSPlus gps;
 
 // HardwareSerial für GPS-Daten
-HardwareSerial SerialGPS(1); // UART1 für das GPS-Modul
+HardwareSerial SerialGPS(1);  // UART1 für das GPS-Modul
+Preferences preferences;
+
+// Globale Variablen für GPS Daten
 float latitude = 0;
 float longitude = 0;
 float altitude = 0;
-String timeString = ""; 
+String timeString = "";
 int satellites = 0;
 
+// WICHTIG: Der Timer muss zwingend hier oben (global) deklariert werden!
+unsigned long lastPrintTime = 0;
+
 void setup() {
-  Serial.begin(115200);        // Serielle Kommunikation mit PC
-  SerialGPS.begin(9600, SERIAL_8N1, 6, 7); // GPS: Baudrate 9600, RX=GPIO6, TX=GPIO7 
+  delay(2000);
+  Serial.begin(115200);                       // Serielle Kommunikation mit PC
+  SerialGPS.begin(9600, SERIAL_8N1, 19, 18);  // GPS: Baudrate 9600, RX=GPIO 19, TX=GPIO 18
   Serial.println("GPS-Modul wird initialisiert...");
 }
 
 void loop() {
+  // 1. Daten kontinuierlich in TinyGPS einspeisen (verhindert Buffer-Überlauf)
   while (SerialGPS.available() > 0) {
-    char c = SerialGPS.read(); // Zeichen vom GPS-Modul lesen
-    if (gps.encode(c)) {       // NMEA-Daten dekodieren
-      displayGPSData();        // GPS-Daten anzeigen
-    }
+    char c = SerialGPS.read();
+    gps.encode(c); 
+  }
+
+  // 2. Timer: Ist die letzte Ausgabe 5000 Millisekunden (5 Sekunden) her?
+  if (millis() - lastPrintTime >= 5000) {
+    lastPrintTime = millis(); // Timer sofort aktualisieren
+    
+    // Jetzt rufen wir die Ausgabe exakt 1 Mal alle 5 Sekunden auf
+    displayGPSData();         
   }
 }
 
 // Funktion, um GPS-Daten auf der Konsole auszugeben
 void displayGPSData() {
-  if (gps.location.isUpdated() && gps.location.isValid()) {
-    latitude = gps.location.lat();
-    longitude = gps.location.lng();
+  if (!gps.location.isValid()) {
+    
+    preferences.begin("gps", true);   // Namensraum "gps" öffnen (true = Lesezugriff)
+    latitude = preferences.getFloat("latitude", 0);  // der 2. Parameter gibt an, was angezeigt werden soll, wenn es keinen Wert im Speicher hat
+    longitude = preferences.getFloat("longitude", 0);
+    altitude = preferences.getFloat("altitude", 0);
+    satellites = 0;
+    timeString = preferences.getString("timeString", ""); 
+    preferences.end();
+  }
+  else {
+    // Neue, gültige Daten vom GPS auslesen
+    if (gps.location.isUpdated() && gps.location.isValid()) {
+      latitude = gps.location.lat();
+      longitude = gps.location.lng();
+    }
+
+    if (gps.altitude.isUpdated()) {
+      altitude = gps.altitude.meters();
+    }
+    if (gps.satellites.isUpdated()) {
+      satellites = gps.satellites.value();
+    }
+
+    if (gps.date.isUpdated() && gps.time.isUpdated()) {
+      char timeBuf[32];
+      snprintf(timeBuf, sizeof(timeBuf), "%04d-%02d-%02d %02d:%02d:%02d",
+               gps.date.year(), gps.date.month(), gps.date.day(),
+               gps.time.hour(), gps.time.minute(), gps.time.second());
+      timeString = String(timeBuf);
+    }
+
+    // Werte in Preferences speichern (false = Schreibzugriff)
+    // Info: putFloat/putInt schreiben automatisch nur dann in den Flash, 
+    // wenn sich der Wert auch wirklich geändert hat (schont den Speicherchip!).
+    preferences.begin("gps", false); 
+    preferences.putFloat("latitude", latitude);
+    preferences.putFloat("longitude", longitude);
+    preferences.putFloat("altitude", altitude);
+    preferences.putString("timeString", timeString);
+    preferences.end();
   }
 
-  if (gps.altitude.isUpdated()) {
-    altitude = gps.altitude.meters();
-  }
-  if (gps.satellites.isUpdated()) {
-    satellites = gps.satellites.value();
-  }
-
-  if (gps.date.isUpdated() && gps.time.isUpdated()) {
-    // KORREKTUR: MariaDB DATETIME Format (YYYY-MM-DD HH:MM:SS)
-    char timeBuf[32];
-    snprintf(timeBuf, sizeof(timeBuf), "%04d-%02d-%02d %02d:%02d:%02d", 
-             gps.date.year(), gps.date.month(), gps.date.day(), 
-             gps.time.hour(), gps.time.minute(), gps.time.second());
-    timeString = String(timeBuf); 
-  }
-
-  Serial.printf("Breitengrad: %.6f\n", latitude );
-  Serial.printf("Längengrad: %.6f\n", longitude );
-  Serial.printf("Höhe: %.2f m\n", altitude );
-  Serial.printf("Satelliten: %d\n", satellites );
-  Serial.printf("Zeit/Datum: %s\n", timeString.c_str() ); 
+  // Ausgabe
+  Serial.printf("Breitengrad: %.6f\n", latitude);
+  Serial.printf("Längengrad: %.6f\n", longitude);
+  Serial.printf("Höhe: %.2f m\n", altitude);
+  Serial.printf("Satelliten: %d\n", satellites);
+  Serial.printf("Zeit/Datum: %s\n", timeString.c_str());
   Serial.println("----------------------------");
 }
