@@ -79,11 +79,11 @@ int intervall_ms = 15000;
 #include "bewegung.h"                        // SR602 PIR
 #include "co2_temperatur_luftfeuchtigkeit.h" // SCD41 CO2, Temperatur, Luftfeuchtigkeit
 #include "distanz.h"                         // VL53L0X Distanz
+#include "gewicht.h"                         // HX711 Waage
 // #include "lautstaerke.h"      // INMP441 Mikrofon
 // #include "magnet.h"           // GPS14-B Magnetsensor
 // #include "helligkeit.h"       // BH1750 Lichtsensor
 // #include "lage.h"             // ICM-20948 9DOF
-// #include "gewicht.h"          // HX711 Waage
 // #include "rauch.h"            // MQ-2 Gas/Rauch
 // #include "luftdruck.h"        // BMP280 Luftdruck
 // #include "hoehe.h"            // BMP280 Hoehe
@@ -143,11 +143,11 @@ void setup()
   setupBewegung();                        // in bewegung.h
   setupCo2_Temperatur_Luftfeuchtigkeit(); // co2_temperatur_luftfeuchtigkeit.h
   setupDistanz();                         // in distanz.h
+  setupGewicht();                         // in gewicht.h
   // setupLautstaerke(); // in lautstaerke.h
   // setupMagnet();      // in magnet.h
   // setupHelligkeit();  // in helligkeit.h
   // setupLage();        // in lage.h
-  // setupGewicht();     // in gewicht.h
   // setupLuftdruck();   // in luftdruck.h
 
   setupPortalButton(); // in wlan.h
@@ -176,6 +176,9 @@ void loop()
 
   int distanz = getDistanz(); // in distanz.h
   Serial.printf("Distanz: %d\n", distanz);
+
+  float gewicht = getGewicht(); // in gewicht.h
+  Serial.printf("Gewicht: %.2f g\n", gewicht);
 
   // String jsonResponse = "{\"temperatur\":" + String(temperatur) +
   //                       ",\"luftfeuchtigkeit\":" + String(luftfeuchtigkeit) +
