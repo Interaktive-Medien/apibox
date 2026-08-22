@@ -4,7 +4,8 @@
  * Original-Demo 21_INMP441_Microphone.ino — Referenz fuer mc/lautstaerke.h.
  * Keine Drittanbieter-Library (ESP-IDF I2S-Treiber).
  * INMP441: VDD<->3.3V  GND<->GND  SD<->GPIO13  SCK<->GPIO2  WS<->GPIO23  L/R<->GND
- * Hinweis: DB_OFFSET muss kalibriert werden (vgl. calibration/lautstaerke_kalibrieren.ino).
+ * Hinweis: mic_db_offset muss kalibriert werden. DIeser Wert wird einfach addiert. 
+ * Leg ein Smartphone mit einem Dezibel-Tester daneben und vergleiche die Ergebnisse. App-Vorschlag: dezibel_x.
  ******************************************************************************************************/
 
 #include <driver/i2s.h>
@@ -25,7 +26,9 @@ int32_t samples[BUFFER_SIZE];
 
 float smoothedSPL = 0;
 const float filterFactor = 0.1;
-const float DB_OFFSET = 122.0;   // muss ggf. kalibriert werden
+
+// Konstante direkt im Code
+const float mic_db_offset = 120.0; 
 
 void setup() {
   Serial.begin(115200);
@@ -78,7 +81,8 @@ float getDB() {
     }
     float rms = sqrt(sumSq / samplesCount);
     float db = 20.0 * log10(rms + 1e-9);
-    float spl = db + DB_OFFSET;
+    float spl = db + mic_db_offset;
+    
     if (smoothedSPL == 0) smoothedSPL = spl;
     else smoothedSPL = (spl * filterFactor) + (smoothedSPL * (1.0 - filterFactor));
     return smoothedSPL;
