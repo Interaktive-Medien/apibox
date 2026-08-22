@@ -60,20 +60,13 @@
 
 #define I2C_SDA 6
 #define I2C_SCL 7
-#define PIN_PIR 4
-#define PIN_MQ3 5
-#define PIN_MQ2 0
-#define PIN_MAGNET 11
 #define PIN_BUTTON_PORTAL 20
 #define PIN_LED BUILTIN_LED
 
-// ======================== JSON Helper ========================
+// ======================== Mess-Intervalle ========================
 
-// wird aufgerufen in allen sensor-headern (.h-Dateien), damit sie einen einheitlichen JSON-String an den anfragenden Client zurueckgeben koennen
-String createJsonResponse(String wert, String einheit, String datentyp, String sensor)
-{
-  return "{\"wert\":" + wert + ",\"einheit\":\"" + einheit + "\",\"datentyp\":\"" + datentyp + "\",\"sensor\":\"" + sensor + "\"}";
-}
+int prevTimestamp = 0;
+int intervall_ms = 15000;
 
 // ======================== Zentrale Header (vor den Sensoren) ========================
 
@@ -82,20 +75,20 @@ String createJsonResponse(String wert, String einheit, String datentyp, String s
 
 // ======================== Sensor-Header einbinden ========================
 
-#include "temperatur.h"       // SCD41 Temperatur
-#include "luftfeuchtigkeit.h" // SCD41 Luftfeuchtigkeit
-#include "co2.h"              // SCD41 CO2
-#include "bewegung.h"         // SR602 PIR
-#include "lautstaerke.h"      // INMP441 Mikrofon
-#include "magnet.h"           // GPS14-B Magnetsensor
-#include "helligkeit.h"       // BH1750 Lichtsensor
-#include "alkohol.h"          // MQ-3 Alkoholsensor
-#include "lage.h"             // ICM-20948 9DOF
-#include "gewicht.h"          // HX711 Waage
-#include "rauch.h"            // MQ-2 Gas/Rauch
-#include "luftdruck.h"        // BMP280 Luftdruck
-#include "hoehe.h"            // BMP280 Hoehe
-#include "distanz.h"          // VL53L0X Distanz
+#include "alkohol.h" // MQ-3 Alkoholsensor
+// #include "temperatur.h"       // SCD41 Temperatur
+// #include "luftfeuchtigkeit.h" // SCD41 Luftfeuchtigkeit
+// #include "co2.h"              // SCD41 CO2
+// #include "bewegung.h"         // SR602 PIR
+// #include "lautstaerke.h"      // INMP441 Mikrofon
+// #include "magnet.h"           // GPS14-B Magnetsensor
+// #include "helligkeit.h"       // BH1750 Lichtsensor
+// #include "lage.h"             // ICM-20948 9DOF
+// #include "gewicht.h"          // HX711 Waage
+// #include "rauch.h"            // MQ-2 Gas/Rauch
+// #include "luftdruck.h"        // BMP280 Luftdruck
+// #include "hoehe.h"            // BMP280 Hoehe
+// #include "distanz.h"          // VL53L0X Distanz
 
 // ======================== LittleFS Datei-Handler ========================
 
@@ -127,56 +120,6 @@ bool handleFileRead(String path)
   return false;
 }
 
-// ======================== API Endpunkte registrieren ========================
-
-// wird aufgerufen in wlan.h
-void setupAPIRoutes()
-{
-  server.on("/temperatur", HTTP_GET, []()
-            { server.send(200, "application/json", getTemperatur()); }); // in temperatur.h, gemessen mit SCD41
-  server.on("/luftfeuchtigkeit", HTTP_GET, []()
-            { server.send(200, "application/json", getLuftfeuchtigkeit()); }); // in luftfeuchtigkeit.h
-  server.on("/co2", HTTP_GET, []()
-            { server.send(200, "application/json", getCO2()); }); // in co2.h
-  server.on("/bewegung", HTTP_GET, []()
-            { server.send(200, "application/json", getBewegung()); }); // in bewegung.h
-  server.on("/lautstaerke", HTTP_GET, []()
-            { server.send(200, "application/json", getLautstaerke()); }); // in lautstaerke.h
-  server.on("/magnet", HTTP_GET, []()
-            { server.send(200, "application/json", getMagnet()); }); // in magnet.h
-  server.on("/helligkeit", HTTP_GET, []()
-            { server.send(200, "application/json", getHelligkeit()); }); // in helligkeit.h
-  server.on("/alkohol", HTTP_GET, []()
-            { server.send(200, "application/json", getAlkohol()); }); // in alkohol.h
-  server.on("/lage", HTTP_GET, []()
-            { server.send(200, "application/json", getLage()); }); // in lage.h
-  server.on("/gewicht", HTTP_GET, []()
-            { server.send(200, "application/json", getGewicht()); }); // in gewicht.h
-  server.on("/rauch", HTTP_GET, []()
-            { server.send(200, "application/json", getRauch()); }); // in rauch.h
-  server.on("/luftdruck", HTTP_GET, []()
-            { server.send(200, "application/json", getLuftdruck()); }); // in luftdruck.h
-  server.on("/hoehe", HTTP_GET, []()
-            { server.send(200, "application/json", getHoehe()); }); // in hoehe.h
-  server.on("/distanz", HTTP_GET, []()
-            { server.send(200, "application/json", getDistanz()); }); // in distanz.h
-
-  server.on("/api", HTTP_GET, []()
-            {
-    String json = "{\"info\":\"API Box - ESP32-C6 Sensor API\",\"endpoints\":["
-                  "\"/temperatur\",\"/luftfeuchtigkeit\",\"/co2\",\"/bewegung\","
-                  "\"/lautstaerke\",\"/magnet\",\"/helligkeit\",\"/alkohol\","
-                  "\"/lage\",\"/gewicht\",\"/rauch\",\"/luftdruck\","
-                  "\"/hoehe\",\"/distanz\"]}";
-    server.send(200, "application/json", json); });
-
-  server.onNotFound([]()
-                    {
-    if (!handleFileRead(server.uri())) {
-      server.send(404, "text/plain", "404: Not Found");
-    } });
-}
-
 // ======================== Setup ========================
 
 void setup()
@@ -185,7 +128,7 @@ void setup()
   delay(1000);
 
   pinMode(PIN_LED, OUTPUT);
-  rgbLedWrite(PIN_LED, 0, 255, 0); // Rot
+  rgbLedWrite(PIN_LED, 0, 255, 0); // Rot (keine WLAN Verbindung)
 
   Wire.begin(I2C_SDA, I2C_SCL);
   setupDisplay();                   // in display.h
@@ -198,17 +141,17 @@ void setup()
   }
 
   Serial.println("\n-----------------------------\nInitialisiere Sensoren...");
-  setupTemperatur();  // in temperatur.h
-  setupBewegung();    // in bewegung.h
-  setupLautstaerke(); // in lautstaerke.h
-  setupMagnet();      // in magnet.h
-  setupHelligkeit();  // in helligkeit.h
-  setupAlkohol();     // in alkohol.h
-  setupLage();        // in lage.h
-  setupGewicht();     // in gewicht.h
-  setupRauch();       // in rauch.h
-  setupLuftdruck();   // in luftdruck.h
-  setupDistanz();     // in distanz.h
+  setupAlkohol(); // in alkohol.h
+  // setupTemperatur();  // in temperatur.h
+  // setupBewegung();    // in bewegung.h
+  // setupLautstaerke(); // in lautstaerke.h
+  // setupMagnet();      // in magnet.h
+  // setupHelligkeit();  // in helligkeit.h
+  // setupLage();        // in lage.h
+  // setupGewicht();     // in gewicht.h
+  // setupRauch();       // in rauch.h
+  // setupLuftdruck();   // in luftdruck.h
+  // setupDistanz();     // in distanz.h
 
   setupPortalButton(); // in wlan.h
   setupWLAN();         // in wlan.h
@@ -219,4 +162,30 @@ void setup()
 void loop()
 {
   maintainWiFiConnection(); // in wlan.h
+  if (millis() < prevTimestamp + intervall_ms)
+    return;
+  prevTimestamp = millis();
+
+  float alkohol = getAlkohol(); // in alkohol.h
+  Serial.printf("Alkohol: %.2f mg/L\n", alkohol);
+
+  // String jsonResponse = "{\"temperatur\":" + String(temperatur) +
+  //                       ",\"luftfeuchtigkeit\":" + String(luftfeuchtigkeit) +
+  //                       ",\"bewegung\":" + String(bewegung) +
+  //                       ",\"lautstaerke\":" + String(lautstaerke) +
+  //                       ",\"magnet\":" + String(magnet) +
+  //                       ",\"helligkeit\":" + String(helligkeit) +
+  //                       ",\"alkohol\":" + String(alkohol) +
+  //                       ",\"lage_x\":" + String(lage_x) +
+  //                       ",\"lage_y\":" + String(lage_y) +
+  //                       ",\"gewicht\":" + String(gewicht) +
+  //                       ",\"co2\":" + String(co2) +
+  //                       ",\"luftdruck\":" + String(luftdruck) +
+  //                       ",\"distanz\":" + String(distanz) +
+  //                       ",\"latitude\":" + String(latitude, 5) +
+  //                       ",\"longitude\":" + String(longitude, 5) +
+  //                       ",\"altitude\":" + String(altitude) +
+  //                       ",\"gps_time\":\"" + gps_time + "\"" +
+  //                       ",\"gps_num_satellites\":" + String(gps_num_satellites) +
+  //                       "}";
 }

@@ -30,7 +30,7 @@ bool portalRoutesRegistered = false;
 // Forward Declarations für Funktionen aus anderen Headern/Dateien
 void displayText(String text);    // in display.h
 bool handleFileRead(String path); // in mc.ino
-void setupAPIRoutes();            // in mc.ino
+// void setupAPIRoutes();            // in mc.ino
 
 // ---------------------------------------------------------------------------
 // Taster (GPIO20) zum manuellen Start des Captive Portals
@@ -116,7 +116,12 @@ void startCaptivePortal()
 {
   Serial.println("\n-----------------------------\nStarte captive WLAN...");
   WiFi.mode(WIFI_AP);
-  WiFi.softAP("apibox");
+
+  preferences.begin("apibox", true);
+  int box_id = preferences.getInt("box_id", 0);
+  preferences.end();
+  String ssid = "apibox" + String(box_id);
+  WiFi.softAP(ssid);
 
   IPAddress apIP = WiFi.softAPIP();
   dnsServer.start(DNS_PORT, "*", apIP);
@@ -139,7 +144,7 @@ void startCaptivePortal()
   Serial.printf("AP Modus gestartet. AP IP: %s, DNS: %s\n", WiFi.softAPIP().toString().c_str(), WiFi.softAPIP().toString().c_str());
 }
 
-// aufgerufen in mc.ino
+// aufgerufen in mc.ino, wenn Button gedrückt wurde
 void handlePortalButton()
 {
   if (checkPortalButton())
@@ -266,7 +271,7 @@ void setupWLAN()
     Serial.printf("Verbunden: %s, IP: %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
 
     // API Endpunkte und Webserver starten
-    setupAPIRoutes(); // in mc.ino: roting der API-Endpunkte, z.B. http://[IP]/temperatur -> getTemperatur() in temperatur.h
+    // setupAPIRoutes(); // in mc.ino: roting der API-Endpunkte, z.B. http://[IP]/temperatur -> getTemperatur() in temperatur.h
     server.begin();
     Serial.println("HTTP Webserver gestartet.");
   }
