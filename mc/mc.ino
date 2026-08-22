@@ -75,9 +75,9 @@ int intervall_ms = 15000;
 
 // ======================== Sensor-Header einbinden ========================
 
-#include "alkohol.h"  // MQ-3 Alkoholsensor
-#include "bewegung.h" // SR602 PIR
-// #include "temperatur.h"       // SCD41 Temperatur
+#include "alkohol.h"                         // MQ-3 Alkoholsensor
+#include "bewegung.h"                        // SR602 PIR
+#include "co2_temperatur_luftfeuchtigkeit.h" // SCD41 Temperatur
 // #include "luftfeuchtigkeit.h" // SCD41 Luftfeuchtigkeit
 // #include "co2.h"              // SCD41 CO2
 // #include "lautstaerke.h"      // INMP441 Mikrofon
@@ -141,15 +141,14 @@ void setup()
   }
 
   Serial.println("\n-----------------------------\nInitialisiere Sensoren...");
-  setupAlkohol();  // in alkohol.h
-  setupBewegung(); // in bewegung.h
-  // setupTemperatur();  // in temperatur.h
+  setupAlkohol();                         // in alkohol.h
+  setupBewegung();                        // in bewegung.h
+  setupCo2_Temperatur_Luftfeuchtigkeit(); // in temperatur.h
   // setupLautstaerke(); // in lautstaerke.h
   // setupMagnet();      // in magnet.h
   // setupHelligkeit();  // in helligkeit.h
   // setupLage();        // in lage.h
   // setupGewicht();     // in gewicht.h
-  // setupRauch();       // in rauch.h
   // setupLuftdruck();   // in luftdruck.h
   // setupDistanz();     // in distanz.h
 
@@ -171,6 +170,11 @@ void loop()
 
   int bewegung = getBewegung(); // in bewegung.h
   Serial.printf("Bewegung: %d\n", bewegung);
+
+  getCo2_Temperatur_Luftfeuchtigkeit(); // in co2_temperatur_luftfeuchtigkeit.h
+  Serial.printf("CO2: %d ppm\n", co2);
+  Serial.printf("Temperatur: %.2f °C\n", temperature);
+  Serial.printf("Luftfeuchtigkeit: %.2f %%\n", humidity);
 
   // String jsonResponse = "{\"temperatur\":" + String(temperatur) +
   //                       ",\"luftfeuchtigkeit\":" + String(luftfeuchtigkeit) +

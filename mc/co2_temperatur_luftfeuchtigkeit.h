@@ -1,23 +1,26 @@
 /**********************************************************************************************
- *  temperatur.h
- *  SCD41 Temperatur-Sensor via I2C
- *  Library: Sensirion I2C SCD4x + Sensirion Core
- *  Werte als JSON-String abrufen: http://[IP_ADRESSE]/temperatur
+ *  co2_temperatur_luftfeuchtigkeit.h
+ *  SCD41 CO2-Konzentration, temperatur, Luftfeuchtigkeit via I2C
+ *  Library: Sensirion I2C SCD4x (bereits in temperatur.h initialisiert)
  *
- *  Anschluss:
- *  Sensor: VCC  <->  ESP32-C6: 3.3V
- *  Sensor: GND  <->  ESP32-C6: GND
- *  Sensor: SDA  <->  ESP32-C6: GPIO6
- *  Sensor: SCL  <->  ESP32-C6: GPIO7
+ *  Anschluss: I2C (GPIO6: SDA, GPIO7: SCL)
+ *  Nutzt die gemeinsamen SCD41-Variablen aus temperatur.h
  *
- *  Hinweis: SCD41 liefert auch Luftfeuchtigkeit und CO2 (siehe luftfeuchtigkeit.h, co2.h).
- *  Alle drei Werte werden gemeinsam ausgelesen, um doppelte I2C-Zugriffe zu vermeiden.
+ *  Typische Werte:
+ *    400 ppm  = Frischluft
+ *    800 ppm  = gut beluefteter Raum
+ *   1000 ppm  = durchschnittliches Buero
+ *   2000 ppm  = schlechte Luft
  **********************************************************************************************/
 
-#ifndef TEMPERATUR_H
-#define TEMPERATUR_H
+#ifndef CO2_TEMPERATUR_LUFTFEUCHTIGKEIT_H
+#define CO2_TEMPERATUR_LUFTFEUCHTIGKEIT_H
 
 #include <SensirionI2cScd4x.h>
+
+uint16_t co2;
+float temperature;
+float humidity;
 
 // Forward Declaration (in mc.ino definiert)
 // String createJsonResponse(String wert, String einheit, String datentyp, String sensor);
@@ -33,7 +36,7 @@ unsigned long scd41_lastRead = 0;
 const unsigned long SCD41_READ_INTERVAL = 5000; // Min. 5s zwischen Messungen
 
 // aufgerufen in mc.ino
-void setupTemperatur()
+void setupCo2_Temperatur_Luftfeuchtigkeit()
 {
   scd4x.begin(Wire, SCD41_I2C_ADDR_62);
 
@@ -79,11 +82,14 @@ void readSCD41()
 }
 
 // aufgerufen in mc.ino
-String getTemperatur()
+void getCo2_Temperatur_Luftfeuchtigkeit()
 {
-  Serial.println("scd41_temperature: " + String(scd41_temperature, 2));
-  readSCD41();
-  return createJsonResponse(String(scd41_temperature, 2), "C", "float", "SCD41"); // Funktion createJsonResponse ist in mc.ino definiert
+  bool dataReady;
+  scd4x.getDataReadyStatus(dataReady);
+  if (dataReady)
+  {
+    scd4x.readMeasurement(co2, temperature, humidity);
+  }
 }
 
 #endif
