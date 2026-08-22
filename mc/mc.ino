@@ -77,9 +77,8 @@ int intervall_ms = 15000;
 
 #include "alkohol.h"                         // MQ-3 Alkoholsensor
 #include "bewegung.h"                        // SR602 PIR
-#include "co2_temperatur_luftfeuchtigkeit.h" // SCD41 Temperatur
-// #include "luftfeuchtigkeit.h" // SCD41 Luftfeuchtigkeit
-// #include "co2.h"              // SCD41 CO2
+#include "co2_temperatur_luftfeuchtigkeit.h" // SCD41 CO2, Temperatur, Luftfeuchtigkeit
+#include "distanz.h"                         // VL53L0X Distanz
 // #include "lautstaerke.h"      // INMP441 Mikrofon
 // #include "magnet.h"           // GPS14-B Magnetsensor
 // #include "helligkeit.h"       // BH1750 Lichtsensor
@@ -88,7 +87,6 @@ int intervall_ms = 15000;
 // #include "rauch.h"            // MQ-2 Gas/Rauch
 // #include "luftdruck.h"        // BMP280 Luftdruck
 // #include "hoehe.h"            // BMP280 Hoehe
-// #include "distanz.h"          // VL53L0X Distanz
 
 // ======================== LittleFS Datei-Handler ========================
 
@@ -143,14 +141,14 @@ void setup()
   Serial.println("\n-----------------------------\nInitialisiere Sensoren...");
   setupAlkohol();                         // in alkohol.h
   setupBewegung();                        // in bewegung.h
-  setupCo2_Temperatur_Luftfeuchtigkeit(); // in temperatur.h
+  setupCo2_Temperatur_Luftfeuchtigkeit(); // co2_temperatur_luftfeuchtigkeit.h
+  setupDistanz();                         // in distanz.h
   // setupLautstaerke(); // in lautstaerke.h
   // setupMagnet();      // in magnet.h
   // setupHelligkeit();  // in helligkeit.h
   // setupLage();        // in lage.h
   // setupGewicht();     // in gewicht.h
   // setupLuftdruck();   // in luftdruck.h
-  // setupDistanz();     // in distanz.h
 
   setupPortalButton(); // in wlan.h
   setupWLAN();         // in wlan.h
@@ -175,6 +173,9 @@ void loop()
   Serial.printf("CO2: %d ppm\n", co2);
   Serial.printf("Temperatur: %.2f °C\n", temperature);
   Serial.printf("Luftfeuchtigkeit: %.2f %%\n", humidity);
+
+  int distanz = getDistanz(); // in distanz.h
+  Serial.printf("Distanz: %d\n", distanz);
 
   // String jsonResponse = "{\"temperatur\":" + String(temperatur) +
   //                       ",\"luftfeuchtigkeit\":" + String(luftfeuchtigkeit) +
