@@ -7,8 +7,8 @@
  ******************************************************************************************************/
 
 const int magnetPin = 11;
-int state = 0;
-int prevState = -1;
+int magnetstate = 0;
+int prev_magnetstate = -1;
 
 void setup() {
   Serial.begin(115200);
@@ -16,12 +16,12 @@ void setup() {
 }
 
 void loop() {
-  state = digitalRead(magnetPin);
-  if (state == prevState) return;
-  prevState = state;
-  if (state == LOW) {
-    Serial.println("Magnet erkannt (Tuer zu)");
+  magnetstate = digitalRead(magnetPin);
+  if (magnetstate == prev_magnetstate) return;
+  prev_magnetstate = magnetstate;
+  if (magnetstate == 1) {
+    Serial.println("Magnet erkannt");
   } else {
-    Serial.println("kein Magnet (Tuer offen)");
+    Serial.println("kein Magnet erkannt");
   }
 }
