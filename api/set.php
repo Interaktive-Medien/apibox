@@ -35,7 +35,7 @@ $tableName = "box" . $box_id;
 $inputJSON = file_get_contents('php://input');
 
 // nur zum Test ohne ESP32
-$inputJSON = '{"temperatur": 22.5,"luftfeuchtigkeit": 45.2,"bewegung": 1,"lautstaerke": 65.4,"magnet": 0,"helligkeit": 400.5,"alkohol": 0.0,"lage_x": 1.2,"lage_y": -0.5,"gewicht": 150.0,"co2": 450,"luftdruck": 1013.25,"distanz": 120,"latitude": 46.8503,"longitude": 9.5310,"altitude": 593.0,"gps_time": "11:11:25","gps_num_satellites": 8}';
+// $inputJSON = '{"temperatur": 22.5,"luftfeuchtigkeit": 45.2,"bewegung": 1,"lautstaerke": 65.4,"magnet": 0,"helligkeit": 400.5,"alkohol": 0.0,"lage_x": 1.2,"lage_y": -0.5,"gewicht": 150.0,"co2": 450,"luftdruck": 1013.25,"distanz": 120,"latitude": 46.8503,"longitude": 9.5310,"altitude": 593.0,"gps_time": "11:11:25","gps_num_satellites": 8}';
 
 $input = json_decode($inputJSON, true); 
 

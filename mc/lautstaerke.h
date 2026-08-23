@@ -37,9 +37,6 @@ const int DMA_BUF_LEN = 1024;
 const int BUFFER_SIZE = 512;
 int32_t samples[BUFFER_SIZE];
 
-float smoothedSPL = 0;
-const float filterFactor = 0.1;
-
 // Variable für den Offset (wird im setup() aus dem Speicher überschrieben)
 float mic_db_offset = 120.0;
 
@@ -51,9 +48,6 @@ void setupLautstaerke()
   // Lese "dboffset". Falls er nicht existiert, verwende 120.0 als Fallback
   mic_db_offset = preferences.getFloat("dboffset", 120.0);
   preferences.end();
-
-  // Serial.print("Geladener mic_db_offset: ");
-  // Serial.println(mic_db_offset);
 
   // 2. I2S Mikrofon initialisieren
   i2s_config_t i2s_config = {
@@ -88,34 +82,48 @@ void setupLautstaerke()
 // aufgerufen in mc.ino
 float getLautstaerke()
 {
-
   size_t bytesRead = 0;
-  esp_err_t result = i2s_read(I2S_PORT, &samples, sizeof(samples), &bytesRead, portMAX_DELAY);
 
-  if (result == ESP_OK && bytesRead > 0)
+  // 1. Alte DMA-Puffer leeren (verhindert das Lesen von veralteten Werten aus den letzten 15s)
+  while (true)
   {
-    int samplesCount = bytesRead / 4;
-    float sumSq = 0;
-    for (int i = 0; i < samplesCount; i++)
-    {
-      int32_t val = samples[i] >> 8;
-      float floatSample = (float)val / 8388608.0;
-      sumSq += (floatSample * floatSample);
-    }
-    float rms = sqrt(sumSq / samplesCount);
-    float db = 20.0 * log10(rms + 1e-9);
-
-    // Hier wird nun der geladene mic_db_offset addiert
-    float spl = db + mic_db_offset;
-
-    if (smoothedSPL == 0)
-      smoothedSPL = spl;
-    else
-      smoothedSPL = (spl * filterFactor) + (smoothedSPL * (1.0 - filterFactor));
-    return smoothedSPL;
+    i2s_read(I2S_PORT, &samples, sizeof(samples), &bytesRead, 0);
+    if (bytesRead == 0) break;
   }
-  delay(10);
-  return smoothedSPL;
+
+  // 2. Frische Puffer einlesen (ca. 100ms) für einen stabilen Momentanwert
+  float sumSPL = 0;
+  int validReads = 0;
+
+  for (int b = 0; b < 4; b++)
+  {
+    esp_err_t result = i2s_read(I2S_PORT, &samples, sizeof(samples), &bytesRead, portMAX_DELAY);
+    if (result == ESP_OK && bytesRead > 0)
+    {
+      int samplesCount = bytesRead / 4;
+      float sumSq = 0;
+      for (int i = 0; i < samplesCount; i++)
+      {
+        int32_t val = samples[i] >> 8;
+        float floatSample = (float)val / 8388608.0;
+        sumSq += (floatSample * floatSample);
+      }
+      float rms = sqrt(sumSq / samplesCount);
+      float db = 20.0 * log10(rms + 1e-9);
+
+      // Hier wird nun der geladene mic_db_offset addiert
+      float spl = db + mic_db_offset;
+      sumSPL += spl;
+      validReads++;
+    }
+  }
+
+  if (validReads > 0)
+  {
+    return sumSPL / validReads;
+  }
+  
+  return 0.0;
 }
 
 #endif

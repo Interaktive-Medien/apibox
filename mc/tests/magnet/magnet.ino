@@ -12,6 +12,7 @@ int prev_magnetstate = -1;
 
 void setup() {
   Serial.begin(115200);
+  delay(2000);
   pinMode(magnetPin, INPUT_PULLDOWN);
 }
 
@@ -24,4 +25,5 @@ void loop() {
   } else {
     Serial.println("kein Magnet erkannt");
   }
+  delay(50);
 }

@@ -55,7 +55,7 @@ void setupLage()
 }
 
 // aufgerufen in mc.ino
-String getLage()
+void getLage()
 {
   xyzFloat gValue;
   myIMU.readSensor();

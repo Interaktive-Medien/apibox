@@ -10,18 +10,23 @@ require_once 'config.php';
 // Hier trägst du alle Hardware-Namen und Einheiten ein, passend zu deinen Spaltennamen.
 $sensorMeta = [
     'co2'              => ['einheit' => 'ppm',  'datentyp' => 'int',   'sensor' => 'SCD41'],
-    'temperatur'       => ['einheit' => 'C',   'datentyp' => 'float', 'sensor' => 'SCD41'],
+    'temperatur'       => ['einheit' => '°C',   'datentyp' => 'float', 'sensor' => 'SCD41'],
     'luftfeuchtigkeit' => ['einheit' => '%',    'datentyp' => 'float', 'sensor' => 'SCD41'],
     'luftdruck'        => ['einheit' => 'hPa',  'datentyp' => 'float', 'sensor' => 'BMP280'],
-    'distanz'          => ['einheit' => 'mm',   'datentyp' => 'int',   'sensor' => 'VL6180X'],
-    'bewegung'         => ['einheit' => '',     'datentyp' => 'bool',  'sensor' => 'PIR'],
-    'lautstaerke'      => ['einheit' => '%',    'datentyp' => 'int',   'sensor' => 'Mic'],
-    'magnet'           => ['einheit' => '',     'datentyp' => 'bool',  'sensor' => 'Hall'],
-    'helligkeit'       => ['einheit' => '%',    'datentyp' => 'int',   'sensor' => 'LDR'],
-    'alkohol'          => ['einheit' => '',     'datentyp' => 'int',   'sensor' => 'MQ3'],
-    'lage_x'           => ['einheit' => 'Grad',    'datentyp' => 'float', 'sensor' => 'MPU6050'],
-    'lage_y'           => ['einheit' => 'Grad',    'datentyp' => 'float', 'sensor' => 'MPU6050'],
-    'gewicht'          => ['einheit' => 'kg',   'datentyp' => 'float', 'sensor' => 'LoadCell']
+    'distanz'          => ['einheit' => 'mm',   'datentyp' => 'int',   'sensor' => 'VL53L0X'],
+    'bewegung'         => ['einheit' => '',     'datentyp' => 'int (0/1 ~ bool)',  'sensor' => 'SR602'],
+    'lautstaerke'      => ['einheit' => '%',    'datentyp' => 'int',   'sensor' => 'INMP441'],
+    'magnet'           => ['einheit' => '',     'datentyp' => 'int (0/1 ~ bool)',  'sensor' => 'Reed-Schalter'],
+    'helligkeit'       => ['einheit' => 'lux',    'datentyp' => 'float',   'sensor' => 'BH1750'],
+    'alkohol'          => ['einheit' => 'mg/L',     'datentyp' => 'int',   'sensor' => 'MQ3'],
+    'lage_x'           => ['einheit' => '°',    'datentyp' => 'float', 'sensor' => 'ICM20948'],
+    'lage_y'           => ['einheit' => '°',    'datentyp' => 'float', 'sensor' => 'ICM20948'],
+    'gewicht'          => ['einheit' => 'g',   'datentyp' => 'float', 'sensor' => 'HX711 mit Wägezelle'],
+    'latitude'         => ['einheit' => '°',    'datentyp' => 'float', 'sensor' => 'NEO-M8N-0-10'],
+    'longitude'        => ['einheit' => '°',    'datentyp' => 'float', 'sensor' => 'NEO-M8N-0-10'],
+    'altitude'         => ['einheit' => 'm',    'datentyp' => 'float', 'sensor' => 'NEO-M8N-0-10'],
+    'gps_time'         => ['einheit' => 'datum-uhrzeit', 'datentyp' => 'string', 'sensor' => 'NEO-M8N-0-10'],
+    'gps_num_satellites' => ['einheit' => '', 'datentyp' => 'int', 'sensor' => 'NEO-M8N-0-10']
 ];
 
 // 2. Den gewünschten Sensor aus der URL auslesen
@@ -36,8 +41,8 @@ if (isset($_GET['sensor'])) {
 if (!$requestedSensor || !array_key_exists($requestedSensor, $sensorMeta)) {
     http_response_code(400); // 400 Bad Request
     echo json_encode([
-        "error" => "Ungültiger oder fehlender Sensor.", 
-        "erlaubte_parameter" => array_keys($sensorMeta) // Hilft Studis beim Debuggen
+        "error" => "Ungültiger oder fehlender Sensor. Verschrieben? https://apibox.dorfkneipe.ch/api/get.php?id=[box_id]&sensor=[sensor] -> Beispiel: https://apibox.dorfkneipe.ch/api/get.php?id=1&sensor=co2", 
+        "erlaubte_parameter" => array_keys($sensorMeta) 
     ]);
     exit;
 }

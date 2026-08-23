@@ -3,27 +3,45 @@
  *  ESP32-C6 IoT Sensor API Server
  *
  *  Beschreibung:
- *  Der ESP32-C6 verbindet sich mit einem WLAN-Netzwerk und sendet die Messwerte der angeschlossenen Sensoren in regelmässigen zeitlichenAbständen als JSON-Stringan einen zentralen Server.
- *  Ist kein bekanntes Netzwerk verfuegbar, startet ein Captive Portal (Access Point z.B. "apibox1"), ueber das WLAN-Credentials eingegeben werden koennen.
+ *  Der ESP32-C6 verbindet sich mit einem WLAN-Netzwerk und sendet die Messwerte
+ *der angeschlossenen Sensoren in regelmässigen zeitlichenAbständen als
+ *JSON-Stringan einen zentralen Server. Ist kein bekanntes Netzwerk verfuegbar,
+ *startet ein Captive Portal (Access Point z.B. "apibox1"), ueber das
+ *WLAN-Credentials eingegeben werden koennen.
  *
  *  Board: Waveshare ESP32-C6-N8
- *  Die Logik der einzelnen Sensoren, Libraries und Wiring sind in .h-Dateien ausgelagert.
- * Bei I2C-Sensoren ist der I2C-Bus auf GPIO6 (SDA) und GPIO7 (SCL) gelegt.
+ *  Die Logik der einzelnen Sensoren, Libraries und Wiring sind in .h-Dateien
+ *ausgelagert. Bei I2C-Sensoren ist der I2C-Bus auf GPIO6 (SDA) und GPIO7 (SCL)
+ *gelegt.
  *
  *  I2C Pull-Up: Ein Paar 2.2kOhm an SDA und SCL nach 3.3V
- * Initial müssen in Preferences der Lautstärkesensor INMP441 (../calibration/lautstaerke/01_calib.ino) und die Waage (über HX711 -> ../calibration/gewicht/01_calib.ino) vorbereitet und dann gespeichert werden.
- * Ebenfalls muss die box_id in Preferences (Namespace "apibox", Key "box_id") gespeichert werden, damit das Captive Portal den richtigen Namen bekommt und die Werte i die richtige DB-Tabelle gespeichert werden (../calibration/box_id_speichern.ino).
+ * Initial müssen in Preferences der Lautstärkesensor INMP441
+ *(../calibration/lautstaerke/01_calib.ino) und die Waage (über HX711 ->
+ *../calibration/gewicht/01_calib.ino) vorbereitet und dann gespeichert werden.
+ * Ebenfalls muss die box_id in Preferences (Namespace "apibox", Key "box_id")
+ *gespeichert werden, damit das Captive Portal den richtigen Namen bekommt und
+ *die Werte i die richtige DB-Tabelle gespeichert werden
+ *(../calibration/box_id_speichern.ino).
  *
- * Im Captive Portal Modus hostet der ESP32-C6 einen Webserver, der die HTML/CSS/JS-Dateien aus dem LittleFS-Dateisystem bereitstellt. Die Dateien können  mit der Arduino IDE hochgeladen werden. Der ESP zeigt dann die Konfigurations-Website an, die im Verzeichnis data liegt (html, css, js). Hier können die Credentials des WLAN Netzwerks mit Internet hineterlegt werden, mit dem sich der ESP32-C6 verbinden soll.
- * Am Gerät befinden sich 2 Buttons:
+ * Im Captive Portal Modus hostet der ESP32-C6 einen Webserver, der die
+ *HTML/CSS/JS-Dateien aus dem LittleFS-Dateisystem bereitstellt. Die Dateien
+ *können  mit der Arduino IDE hochgeladen werden. Der ESP zeigt dann die
+ *Konfigurations-Website an, die im Verzeichnis data liegt (html, css, js). Hier
+ *können die Credentials des WLAN Netzwerks mit Internet hineterlegt werden, mit
+ *dem sich der ESP32-C6 verbinden soll. Am Gerät befinden sich 2 Buttons:
  * - Reset (Neustart) und
- * - Captive Portal (hier wird erstellt der ESP ein Netzwerk, mit dem sich der Benutzer verbinden kann, um die WLAN-Credentials zu hinterlegen). Wenn fertig, Reset drücken.
+ * - Captive Portal (hier wird erstellt der ESP ein Netzwerk, mit dem sich der
+ *Benutzer verbinden kann, um die WLAN-Credentials zu hinterlegen). Wenn fertig,
+ *Reset drücken.
+
+ * Falls Programm zu gross für Compiler: Wähle Tools > Partition Scheme > Huge APP (3MB No OTA/1MB SPIFFS)
  *****************************************************************************/
 
-#include <Wire.h>
 #include "FS.h"
 #include "LittleFS.h"
+#include <Arduino_JSON.h>
 #include <HTTPClient.h>
+#include <Wire.h>
 
 // ======================== Pin-Definitionen ========================
 
@@ -54,7 +72,9 @@ int intervall_ms = 15000; // 15s -  Mess-Intervalle
 
 ////////////////////////// LittleFS Datei-Handler
 
-bool handleFileRead(String path) // wird aufgerufen in wlan.h: Website-Dateien für Captive Portal aus LittleFS bereitstellen
+bool handleFileRead(
+    String path) // wird aufgerufen in wlan.h: Website-Dateien für Captive
+                 // Portal aus LittleFS bereitstellen
 {
   if (path.endsWith("/"))
     path += "index.html";
@@ -116,11 +136,13 @@ void setup()
   setupPortalButton(); // in wlan.h
   setupWLAN();         // in wlan.h
   Serial.println("\n-------- Setup abgeschlossen...");
+  Serial.println("\n-------- Sensorwerte alle " + String(intervall_ms) +
+                 " ms abfragen...");
 }
 
 void loop()
 {
-  Serial.println("\n-------- Sensorwerte alle " + String(intervall_ms) + " ms abfragen...");
+  JSONVar dataObject;
 
   maintainWiFiConnection(); // in wlan.h
   if (millis() < prevTimestamp + intervall_ms)
@@ -129,20 +151,27 @@ void loop()
 
   float alkohol = getAlkohol(); // in alkohol.h
   Serial.printf("Alkohol: %.2f mg/L\n", alkohol);
+  dataObject["alkohol"] = alkohol;
 
   int bewegung = getBewegung(); // in bewegung.h
   Serial.printf("Bewegung: %d\n", bewegung);
+  dataObject["bewegung"] = bewegung;
 
   getCo2_Temperatur_Luftfeuchtigkeit(); // in co2_temperatur_luftfeuchtigkeit.h
   Serial.printf("CO2: %d ppm\n", co2);
   Serial.printf("Temperatur: %.2f °C\n", temperature);
   Serial.printf("Luftfeuchtigkeit: %.2f %%\n", humidity);
+  dataObject["co2"] = co2;
+  dataObject["temperatur"] = temperature;
+  dataObject["luftfeuchtigkeit"] = humidity;
 
   int distanz = getDistanz(); // in distanz.h
   Serial.printf("Distanz: %d\n", distanz);
+  dataObject["distanz"] = distanz;
 
   float gewicht = getGewicht(); // in gewicht.h
   Serial.printf("Gewicht: %.2f g\n", gewicht);
+  dataObject["gewicht"] = gewicht;
 
   getGPS(); // in gps.h
   Serial.printf("Latitude: %.6f°\n", latitude);
@@ -150,52 +179,47 @@ void loop()
   Serial.printf("Altitude: %.2f m\n", altitude);
   Serial.printf("Satelliten: %d\n", satellites);
   Serial.printf("timeString: %s\n", timeString.c_str());
+  dataObject["latitude"] = latitude;
+  dataObject["longitude"] = longitude;
+  dataObject["altitude"] = altitude;
+  dataObject["gps_num_satellites"] = satellites;
+  dataObject["gps_time"] = timeString;
 
   float helligkeit = getHelligkeit(); // in helligkeit.h
   Serial.printf("Helligkeit: %.2f lux\n", helligkeit);
+  dataObject["helligkeit"] = helligkeit;
 
   getLage(); // in lage.h
   Serial.printf("lage_x: %.2f\n", lage_x);
   Serial.printf("lage_y: %.2f\n", lage_y);
+  dataObject["lage_x"] = lage_x;
+  dataObject["lage_y"] = lage_y;
 
   float lautstaerke = getLautstaerke(); // in lautstaerke.h
   Serial.printf("Lautstärke: %.2f dB\n", lautstaerke);
+  dataObject["lautstaerke"] = lautstaerke;
 
   float luftdruck = getLuftdruck(); // in luftdruck.h
   Serial.printf("Luftdruck: %.2f hPa\n", luftdruck);
+  dataObject["luftdruck"] = luftdruck;
 
   int magnet = getMagnet(); // in magnet.h
-  Serial.printf("Magnet: %.2f\n", magnet);
-
-  Serial.println("\n-----------------------------\n");
+  Serial.printf("Magnet: %d\n", magnet);
+  dataObject["magnet"] = magnet;
 
   ////////////////////////// Sensorwerte in JSON-String codieren");
 
-  String jsonString = "{\"alkohol\":" + String(alkohol) +
-                      ",\"bewegung\":" + String(bewegung) +
-                      ",\"co2\":" + String(co2) +
-                      ",\"temperatur\":" + String(temperature) +
-                      ",\"luftfeuchtigkeit\":" + String(humidity) +
-                      ",\"distanz\":" + String(distanz) +
-                      ",\"gewicht\":" + String(gewicht) +
-                      ",\"latitude\":" + String(latitude) +
-                      ",\"longitude\":" + String(longitude) +
-                      ",\"altitude\":" + String(altitude) +
-                      ",\"gps_num_satellites\":" + String(satellites) +
-                      ",\"gps_time\":\"" + timeString +
-                      ",\"helligkeit\":\"" + String(helligkeit) +
-                      ",\"lage_x\":" + String(lage_x) +
-                      ",\"lage_y\":" + String(lage_y) +
-                      ",\"lautstaerke\":" + String(lautstaerke) +
-                      ",\"luftdruck\":" + String(luftdruck) +
-                      ",\"magnet\":" + String(magnet) +
-                      "}";
+  String jsonString = JSON.stringify(dataObject);
+  // Serial.println(jsonString);
 
-  Serial.println(jsonString);
+  ////////////////////////// JSON string per HTTP POST Request an den Server
+  /// schicken (server2db.php)
 
-  ////////////////////////// JSON string per HTTP POST Request an den Server schicken (server2db.php)
-
-  const char *serverURL = "https://apibox.dorfkneipe.ch/api/set.php?id=1"; // Server-Adresse: hier kann http oder https stehen, aber nicht ohne
+  const char *serverURL =
+      "https://apibox.dorfkneipe.ch/api/set.php?id=1"; // Server-Adresse: hier
+                                                       // kann http oder https
+                                                       // stehen, aber nicht
+                                                       // ohne
 
   if (WiFi.status() == WL_CONNECTED)
   { // Überprüfen, ob Wi-Fi verbunden ist
@@ -218,6 +242,7 @@ void loop()
     }
 
     http.end();
+    Serial.println("\n-----------------------------\n");
   }
   else
   {

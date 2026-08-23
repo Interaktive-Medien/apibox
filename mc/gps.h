@@ -103,16 +103,16 @@ void displayGPSData()
   }
 
   // Ausgabe
-  Serial.printf("Breitengrad: %.6f\n", latitude);
-  Serial.printf("Längengrad: %.6f\n", longitude);
-  Serial.printf("Höhe: %.2f m\n", altitude);
-  Serial.printf("Satelliten: %d\n", satellites);
-  Serial.printf("Zeit/Datum: %s\n", timeString.c_str());
-  Serial.println("----------------------------");
+  // Serial.printf("Breitengrad: %.6f\n", latitude);
+  // Serial.printf("Längengrad: %.6f\n", longitude);
+  // Serial.printf("Höhe: %.2f m\n", altitude);
+  // Serial.printf("Satelliten: %d\n", satellites);
+  // Serial.printf("Zeit/Datum: %s\n", timeString.c_str());
+  // Serial.println("----------------------------");
 }
 
 // aufgerufen in mc.ino
-String getGPS()
+void getGPS()
 {
   // 1. Daten kontinuierlich in TinyGPS einspeisen (verhindert Buffer-Überlauf)
   while (SerialGPS.available() > 0)
