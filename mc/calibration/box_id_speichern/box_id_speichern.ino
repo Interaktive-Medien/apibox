@@ -3,7 +3,7 @@
 Preferences preferences;
 
 // Trage hier deinen individuell ermittelten Kalibrierwert ein:
-int box_id = 1; 
+int box_id = 2; 
 
 void setup() {
   Serial.begin(115200);

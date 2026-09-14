@@ -5,7 +5,7 @@
  *  Beschreibung:
  *  Der ESP32-C6 verbindet sich mit einem WLAN-Netzwerk und sendet die Messwerte
  *der angeschlossenen Sensoren in regelmässigen zeitlichenAbständen als
- *JSON-Stringan einen zentralen Server. Ist kein bekanntes Netzwerk verfuegbar,
+ *JSON-String an einen zentralen Server. Ist kein bekanntes Netzwerk verfuegbar,
  *startet ein Captive Portal (Access Point z.B. "apibox1"), ueber das
  *WLAN-Credentials eingegeben werden koennen.
  *
