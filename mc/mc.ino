@@ -1,12 +1,11 @@
 /******************************************************************************
- *  mc.ino — API Box Hauptprogramm
- *  ESP32-C6 IoT Sensor API Server
+ *  mc.ino — Sensorbox Hauptprogramm
  *
  *  Beschreibung:
  *  Der ESP32-C6 verbindet sich mit einem WLAN-Netzwerk und sendet die Messwerte
  *der angeschlossenen Sensoren in regelmässigen zeitlichenAbständen als
- *JSON-String an einen zentralen Server. Ist kein bekanntes Netzwerk verfuegbar,
- *startet ein Captive Portal (Access Point z.B. "apibox1"), ueber das
+ *JSON-String an einen zentralen Server. Ist kein bekanntes Netzwerk verfügbar,
+ *startet ein Captive Portal (Access Point z.B. "sensorbox1"), ueber das
  *WLAN-Credentials eingegeben werden koennen.
  *
  *  Board: Waveshare ESP32-C6-N8
@@ -18,7 +17,7 @@
  * Initial müssen in Preferences der Lautstärkesensor INMP441
  *(../calibration/lautstaerke/01_calib.ino) und die Waage (über HX711 ->
  *../calibration/gewicht/01_calib.ino) vorbereitet und dann gespeichert werden.
- * Ebenfalls muss die box_id in Preferences (Namespace "apibox", Key "box_id")
+ * Ebenfalls muss die box-id in Preferences (Namespace "sensorbox", Key "boxid")
  *gespeichert werden, damit das Captive Portal den richtigen Namen bekommt und
  *die Werte i die richtige DB-Tabelle gespeichert werden
  *(../calibration/box_id_speichern.ino).
@@ -34,7 +33,8 @@
  *Benutzer verbinden kann, um die WLAN-Credentials zu hinterlegen). Wenn fertig,
  *Reset drücken.
 
- * Falls Programm zu gross für Compiler: Wähle Tools > Partition Scheme > Huge APP (3MB No OTA/1MB SPIFFS)
+ * Falls Programm zu gross für Compiler: Wähle Tools > Partition Scheme > Huge
+ APP (3MB No OTA/1MB SPIFFS)
  *****************************************************************************/
 
 #include "FS.h"
@@ -52,9 +52,10 @@
 
 int prevTimestamp = 0;
 int intervall_ms = 15000; // 15s -  Mess-Intervalle
+int boxid = 0;
 
 #include "display.h" // SSD1306 OLED Display
-#include "wlan.h"    // WLAN Verbindung & Captive Portal (definiert server, preferences etc.)
+#include "wlan.h" // WLAN Verbindung & Captive Portal (definiert server, preferences etc.)
 
 ////////////////////////// Sensor-Header einbinden
 
@@ -91,8 +92,7 @@ bool handleFileRead(
   else if (path.endsWith(".json"))
     contentType = "application/json";
 
-  if (LittleFS.exists(path))
-  {
+  if (LittleFS.exists(path)) {
     File file = LittleFS.open(path, "r");
     server.streamFile(file, contentType);
     file.close();
@@ -101,20 +101,23 @@ bool handleFileRead(
   return false;
 }
 
-void setup()
-{
+void setup() {
   Serial.begin(115200);
   delay(1000);
 
   pinMode(PIN_LED, OUTPUT);
   rgbLedWrite(PIN_LED, 0, 255, 0); // Rot (keine WLAN Verbindung)
 
+  preferences.begin("sensorbox", true);
+  boxid = preferences.getInt("boxid", 0);
+  preferences.end();
+  Serial.printf("Gelesene Box ID: %d\n", boxid);
+
   Wire.begin(I2C_SDA, I2C_SCL);
   setupDisplay();                   // in display.h
-  displayText("Starte API Box..."); // in display.h
+  displayText("Starte Sensorbox..."); // in display.h
 
-  if (!LittleFS.begin(true))
-  {
+  if (!LittleFS.begin(true)) {
     Serial.println("LittleFS Mount fehlgeschlagen!");
     displayText("LittleFS Fehler!"); // in display.h
   }
@@ -140,8 +143,7 @@ void setup()
                  " ms abfragen...");
 }
 
-void loop()
-{
+void loop() {
   JSONVar dataObject;
 
   maintainWiFiConnection(); // in wlan.h
@@ -208,6 +210,7 @@ void loop()
   dataObject["magnet"] = magnet;
 
   ////////////////////////// Sensorwerte in JSON-String codieren");
+  dataObject["boxid"] = boxid;
 
   String jsonString = JSON.stringify(dataObject);
   // Serial.println(jsonString);
@@ -215,14 +218,9 @@ void loop()
   ////////////////////////// JSON string per HTTP POST Request an den Server
   /// schicken (server2db.php)
 
-  const char *serverURL =
-      "https://apibox.dorfkneipe.ch/api/set.php?id=1"; // Server-Adresse: hier
-                                                       // kann http oder https
-                                                       // stehen, aber nicht
-                                                       // ohne
+  String serverURL = "https://sensorbox.fiessling.ch/api/set.php";
 
-  if (WiFi.status() == WL_CONNECTED)
-  { // Überprüfen, ob Wi-Fi verbunden ist
+  if (WiFi.status() == WL_CONNECTED) { // Überprüfen, ob Wi-Fi verbunden ist
     // HTTP Verbindung starten und POST-Anfrage senden
     HTTPClient http;
     http.begin(serverURL);
@@ -230,22 +228,17 @@ void loop()
     int httpResponseCode = http.POST(jsonString);
 
     // Prüfen der Antwort vom Server
-    if (httpResponseCode > 0)
-    {
+    if (httpResponseCode > 0) {
       String response = http.getString();
       Serial.printf("HTTP Response code: %d\n", httpResponseCode);
       Serial.println("Response: " + response);
-    }
-    else
-    {
+    } else {
       Serial.printf("Error on sending POST: %d\n", httpResponseCode);
     }
 
     http.end();
     Serial.println("\n-----------------------------\n");
-  }
-  else
-  {
+  } else {
     Serial.println("WiFi Disconnected");
   }
 }

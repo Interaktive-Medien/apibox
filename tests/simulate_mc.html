@@ -1,0 +1,65 @@
+<!-- https://sensorbox.fiessling.ch/tests/simulate_mc.html -->
+
+<!doctype html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mikrocontroller Simulation</title>
+    <link rel="stylesheet" href="simulate_mc.css?v=1" />
+</head>
+
+<body>
+    <h1>Mikrocontroller (ESP32-C6) Simulation</h1>
+    <p>
+        Passe die Werte an und klicke auf den Button, um Test-Daten an <code>set.php</code> zu senden.
+    </p>
+
+    <form id="sensorForm">
+        <div class="form-grid">
+        <div class="form-group">
+            <label for="boxid">Box ID:</label>
+            <input type="number" id="boxid" value="1" min="1" max="15" />
+        </div>
+        <div class="form-group"><label>Temperatur (°C):</label><input type="number" step="0.1" id="temperatur"
+                value="22.5"></div>
+        <div class="form-group"><label>Luftfeuchtigkeit (%):</label><input type="number" step="0.1"
+                id="luftfeuchtigkeit" value="45.2"></div>
+        <div class="form-group"><label>Bewegung (0/1):</label><input type="number" id="bewegung" value="1"></div>
+        <div class="form-group"><label>Lautstärke (dB):</label><input type="number" step="0.1" id="lautstaerke"
+                value="65.4"></div>
+        <div class="form-group"><label>Magnet (0/1):</label><input type="number" id="magnet" value="0"></div>
+        <div class="form-group"><label>Helligkeit (lux):</label><input type="number" step="0.1" id="helligkeit"
+                value="400.5"></div>
+        <div class="form-group"><label>Alkohol (mg/L):</label><input type="number" step="0.1" id="alkohol" value="0.0">
+        </div>
+        <div class="form-group"><label>Lage X:</label><input type="number" step="0.1" id="lage_x" value="1.2"></div>
+        <div class="form-group"><label>Lage Y:</label><input type="number" step="0.1" id="lage_y" value="-0.5"></div>
+        <div class="form-group"><label>Gewicht (g):</label><input type="number" step="0.1" id="gewicht" value="150.0">
+        </div>
+        <div class="form-group"><label>CO2 (ppm):</label><input type="number" id="co2" value="450"></div>
+        <div class="form-group"><label>Luftdruck (hPa):</label><input type="number" step="0.01" id="luftdruck"
+                value="1013.25"></div>
+        <div class="form-group"><label>Distanz (mm):</label><input type="number" id="distanz" value="120"></div>
+        <div class="form-group"><label>Latitude:</label><input type="number" step="0.0001" id="latitude"
+                value="46.8503"></div>
+        <div class="form-group"><label>Longitude:</label><input type="number" step="0.0001" id="longitude"
+                value="9.5310"></div>
+        <div class="form-group"><label>Altitude (m):</label><input type="number" step="0.1" id="altitude" value="593.0">
+        </div>
+        <div class="form-group"><label>GPS Time:</label><input type="text" id="gps_time" value="11:11:25"></div>
+        <div class="form-group"><label>GPS Satellites:</label><input type="number" id="gps_num_satellites" value="8">
+        </div>
+        </div>
+
+        <button type="submit" id="sendDataBtn">Daten senden</button>
+    </form>
+
+    <h3>Antwort vom Server:</h3>
+    <div id="response">Warte auf Aktion...</div>
+
+    <script src="simulate_mc.js"></script>
+</body>
+
+</html>

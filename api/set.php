@@ -1,33 +1,25 @@
 <?php
-// https://apibox.dorfkneipe.ch/api/set.php?id=1
+// https://sensorbox.fiessling.ch/api/set.php
 
 // CORS Header 
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
+
+// OPTIONS (Preflight) Request direkt beantworten
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
 // header('Content-Type: application/json; charset=UTF-8');
 
 
 require_once 'config.php';
 
-// Box ID auslesen und validieren
-if (!isset($_GET['id'])) {
-    http_response_code(400);
-    echo json_encode(["error" => "Parameter 'id' fehlt in der URL (z.B. ?id=1)."]);
-    exit;
-}
 
-$box_id = intval($_GET['id']);
-// echo $box_id;
 
-// Validierung: Nur Box 1 bis 10 erlauben
-if ($box_id < 1 || $box_id > 10) {
-    http_response_code(400);
-    echo json_encode(["error" => "Ungültige Box-ID."]);
-    exit;
-}
-
-$tableName = "box" . $box_id; 
+// $tableName = "box" . $box_id; 
 // echo $tableName;
 
 // ###################################### Empfangen der JSON-Daten
@@ -42,6 +34,22 @@ $input = json_decode($inputJSON, true);
 if (!$input) {
     http_response_code(400);
     echo json_encode(["error" => "Ungültiges oder leeres JSON empfangen."]);
+    exit;
+}
+
+// Box ID aus JSON auslesen und validieren
+if (!isset($input['boxid'])) {
+    http_response_code(400);
+    echo json_encode(["error" => "Parameter 'boxid' fehlt im JSON-Body."]);
+    exit;
+}
+
+$box_id = intval($input['boxid']);
+
+// Validierung: Nur Box 1 bis 15 erlauben
+if ($box_id < 1 || $box_id > 15) {
+    http_response_code(400);
+    echo json_encode(["error" => "Ungültige Box-ID."]);
     exit;
 }
 
@@ -71,16 +79,17 @@ $gps_num_satellites = intval($input["gps_num_satellites"] ?? 0);
 // ###################################### Eintragen in die Datenbank
 
 // SQL Prepare Statement mit benannten Platzhaltern (Named Parameters)
-$sql = "INSERT INTO `" . $tableName . "` 
-        (temperatur, luftfeuchtigkeit, bewegung, lautstaerke, magnet, helligkeit, alkohol, lage_x, lage_y, gewicht, co2, luftdruck, distanz, latitude, longitude, altitude, gps_time, gps_num_satellites) 
+$sql = "INSERT INTO sensordata 
+        (boxid, temperatur, luftfeuchtigkeit, bewegung, lautstaerke, magnet, helligkeit, alkohol, lage_x, lage_y, gewicht, co2, luftdruck, distanz, latitude, longitude, altitude, gps_time, gps_num_satellites) 
         VALUES 
-        (:temperatur, :luftfeuchtigkeit, :bewegung, :lautstaerke, :magnet, :helligkeit, :alkohol, :lage_x, :lage_y, :gewicht, :co2, :luftdruck, :distanz, :latitude, :longitude, :altitude, :gps_time, :gps_num_satellites)";
+        (:boxid, :temperatur, :luftfeuchtigkeit, :bewegung, :lautstaerke, :magnet, :helligkeit, :alkohol, :lage_x, :lage_y, :gewicht, :co2, :luftdruck, :distanz, :latitude, :longitude, :altitude, :gps_time, :gps_num_satellites)";
 
 try {
     $stmt = $pdo->prepare($sql);
     
     // Assoziatives Array für die execute-Methode
     $stmt->execute([
+        ':boxid' => $box_id,
         ':temperatur'         => $temperatur, 
         ':luftfeuchtigkeit'   => $luftfeuchtigkeit, 
         ':bewegung'           => $bewegung, 
@@ -104,7 +113,7 @@ try {
     // Erfolgsmeldung als JSON zurückgeben
     echo json_encode([
         "status" => "success", 
-        "message" => "Daten erfolgreich in $tableName gespeichert."
+        "message" => "Daten erfolgreich in sensordata gespeichert."
     ]);
 
 } catch (PDOException $e) {

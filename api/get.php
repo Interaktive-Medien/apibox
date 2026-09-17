@@ -1,5 +1,5 @@
 <?php
-// https://apibox.dorfkneipe.ch/api/get.php?id=3&sensor=co2
+// https://sensorbox.fiessling.ch/api/get.php?boxid=3&sensor=co2
 // CORS Header (Wichtig, damit die Studierenden per JS (fetch) von ihren eigenen Hostpoint-Seiten zugreifen können!)
 header("Access-Control-Allow-Origin: *");
 header('Content-Type: application/json; charset=UTF-8');
@@ -41,36 +41,39 @@ if (isset($_GET['sensor'])) {
 if (!$requestedSensor || !array_key_exists($requestedSensor, $sensorMeta)) {
     http_response_code(400); // 400 Bad Request
     echo json_encode([
-        "error" => "Ungültiger oder fehlender Sensor. Verschrieben? https://apibox.dorfkneipe.ch/api/get.php?id=[box_id]&sensor=[sensor] -> Beispiel: https://apibox.dorfkneipe.ch/api/get.php?id=1&sensor=co2", 
+        "error" => "Ungültiger oder fehlender Sensor. Verschrieben? https://apibox.dorfkneipe.ch/api/get.php?boxid=[boxid]&sensor=[sensor] -> Beispiel: https://apibox.dorfkneipe.ch/api/get.php?boxid=1&sensor=co2", 
         "erlaubte_parameter" => array_keys($sensorMeta) 
     ]);
     exit;
 }
 
-// 3b. Welches Device (Tabelle) soll abgefragt werden? ?id=1 -> Tabelle box1
-$requestedId = null;
-if (isset($_GET['id'])) {
+// 3b. Welches Device (Tabelle) soll abgefragt werden? ?boxid=1
+$requestedBoxId = null;
+if (isset($_GET['boxid'])) {
     // nur positive ganze Zahlen erlauben
+    if (preg_match('/^[0-9]+$/', $_GET['boxid'])) {
+        $requestedBoxId = intval($_GET['boxid']);
+    }
+} else if (isset($_GET['id'])) { // Fallback für alte Aufrufe
     if (preg_match('/^[0-9]+$/', $_GET['id'])) {
-        $requestedId = intval($_GET['id']);
+        $requestedBoxId = intval($_GET['id']);
     }
 }
 
-if ($requestedId === null) {
+if ($requestedBoxId === null) {
     http_response_code(400);
-    echo json_encode(["error" => "Ungültige oder fehlende id. Erwartet: positive ganze Zahl (z.B. id=1)"]);
+    echo json_encode(["error" => "Ungültige oder fehlende boxid. Erwartet: positive ganze Zahl (z.B. boxid=1)"]);
     exit;
 }
 
 // 4. SQL Abfrage: Nur den aktuellsten Wert der einen spezifischen Spalte holen
 // ORDER BY id DESC LIMIT 1 ist die performanteste Methode für den neusten Wert.
 // Parametrisierte Abfrage mit Placeholder für zusätzliche Sicherheit.
-$table = 'box' . $requestedId; // safe because $requestedId ist bereits als int validiert
-$sql = "SELECT `$requestedSensor` AS wert, zeit FROM `$table` ORDER BY id DESC LIMIT 1";
+$sql = "SELECT `$requestedSensor` AS wert, zeit FROM `sensordata` WHERE boxid = :boxid ORDER BY id DESC LIMIT 1";
 
 try {
     $stmt = $pdo->prepare($sql);
-    $stmt->execute();
+    $stmt->execute([':boxid' => $requestedBoxId]);
     $dbResult = $stmt->fetch(PDO::FETCH_ASSOC); // Nutze fetch() statt fetchAll() für einen einzelnen Datensatz
 
     if ($dbResult) {
