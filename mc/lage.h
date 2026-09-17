@@ -11,8 +11,9 @@
  *  Sensor: SCL  <->  ESP32-C6: GPIO7
  *
  *  Sensor: VIN<->3.3V  GND<->GND  SDA<->GPIO6  SCL<->GPIO7
- *  Liefert Neigungswinkel x/y/z in Grad. autoOffsets() beim Start: Sensor flach + ruhig halten.
- *  Waagrechte Lage: 0/0/0. Neigung wird positiv oder negativ ausgegeben.
+ *  Liefert Neigungswinkel x/y/z in Grad. autoOffsets() beim Start: Sensor flach
+ *+ ruhig halten. Waagrechte Lage: 0/0/0. Neigung wird positiv oder negativ
+ *ausgegeben.
  *****************************************************************************/
 
 #ifndef LAGE_H
@@ -29,20 +30,17 @@ float lage_x = 0.0;
 float lage_y = 0.0;
 
 // aufgerufen in mc.ino
-void setupLage()
-{
+void setupLage() {
 
-  if (!myIMU.init())
-  {
+  if (!myIMU.init()) {
     Serial.println("ICM20948 antwortet nicht");
-  }
-  else
-  {
+  } else {
     Serial.println("ICM20948 ist verbunden");
   }
 
-  Serial.println("Positioniere den ICM20948 flach und bewege ihn nicht - Kalibrierung...");
-  delay(1000);
+  Serial.println(
+      "Positioniere den ICM20948 flach und bewege ihn nicht - Kalibrierung...");
+  delay(500);
 
   // Die Kalibrierung sorgt dafuer, dass leichte Schieflagen der
   // Werkbank oder des Breadboards genullt werden.
@@ -55,8 +53,7 @@ void setupLage()
 }
 
 // aufgerufen in mc.ino
-void getLage()
-{
+void getLage() {
   xyzFloat gValue;
   myIMU.readSensor();
   myIMU.getGValues(&gValue);

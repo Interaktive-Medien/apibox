@@ -41,13 +41,13 @@ if (isset($_GET['sensor'])) {
 if (!$requestedSensor || !array_key_exists($requestedSensor, $sensorMeta)) {
     http_response_code(400); // 400 Bad Request
     echo json_encode([
-        "error" => "Ungültiger oder fehlender Sensor. Verschrieben? https://apibox.dorfkneipe.ch/api/get.php?boxid=[boxid]&sensor=[sensor] -> Beispiel: https://apibox.dorfkneipe.ch/api/get.php?boxid=1&sensor=co2", 
+        "error" => "Ungültiger oder fehlender Sensor. Verschrieben? https://sensorbox.fiessling.ch/api/get.php?boxid=[boxid]&sensor=[sensor] -> Beispiel: https://apibox.dorfkneipe.ch/api/get.php?boxid=1&sensor=co2", 
         "erlaubte_parameter" => array_keys($sensorMeta) 
     ]);
     exit;
 }
 
-// 3b. Welches Device (Tabelle) soll abgefragt werden? ?boxid=1
+// 3b. Welches Device  soll abgefragt werden? ?boxid=1
 $requestedBoxId = null;
 if (isset($_GET['boxid'])) {
     // nur positive ganze Zahlen erlauben

@@ -48,11 +48,13 @@
 #define I2C_SDA 6
 #define I2C_SCL 7
 #define PIN_BUTTON_PORTAL 20
+#define PIN_BUTTON_DISPLAY 10
 #define PIN_LED BUILTIN_LED
 
 int prevTimestamp = 0;
 int intervall_ms = 15000; // 15s -  Mess-Intervalle
 int boxid = 0;
+JSONVar latestData;
 
 #include "display.h" // SSD1306 OLED Display
 #include "wlan.h" // WLAN Verbindung & Captive Portal (definiert server, preferences etc.)
@@ -103,7 +105,6 @@ bool handleFileRead(
 
 void setup() {
   Serial.begin(115200);
-  delay(1000);
 
   pinMode(PIN_LED, OUTPUT);
   rgbLedWrite(PIN_LED, 0, 255, 0); // Rot (keine WLAN Verbindung)
@@ -123,6 +124,7 @@ void setup() {
   }
 
   Serial.println("\n--------\nInitialisiere Sensoren...");
+  displayText("Sensoren\ninitialisieren..."); // NEW
   setupAlkohol();                         // in alkohol.h
   setupBewegung();                        // in bewegung.h
   setupCo2_Temperatur_Luftfeuchtigkeit(); // co2_temperatur_luftfeuchtigkeit.h
@@ -136,6 +138,7 @@ void setup() {
   setupMagnet();                          // in magnet.h
   Serial.println("\n-------- Initialisierung der Sensoren abgeschlossen...");
 
+  pinMode(PIN_BUTTON_DISPLAY, INPUT_PULLDOWN);
   setupPortalButton(); // in wlan.h
   setupWLAN();         // in wlan.h
   Serial.println("\n-------- Setup abgeschlossen...");
@@ -147,6 +150,8 @@ void loop() {
   JSONVar dataObject;
 
   maintainWiFiConnection(); // in wlan.h
+  checkDisplayButton();     // in display.h
+
   if (millis() < prevTimestamp + intervall_ms)
     return;
   prevTimestamp = millis();
@@ -211,6 +216,8 @@ void loop() {
 
   ////////////////////////// Sensorwerte in JSON-String codieren");
   dataObject["boxid"] = boxid;
+  latestData = dataObject;
+  renderCurrentPage();
 
   String jsonString = JSON.stringify(dataObject);
   // Serial.println(jsonString);

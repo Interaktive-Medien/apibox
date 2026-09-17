@@ -181,6 +181,7 @@ bool connectToSavedWiFi() {
     return false;
 
   Serial.printf("Verbinde mit WLAN: %s (%s)\n", ssid.c_str(), mode.c_str());
+  displayText("Verbinde mit WLAN\n" + ssid + "...");
   WiFi.disconnect(true);
   WiFi.mode(WIFI_STA);
 
