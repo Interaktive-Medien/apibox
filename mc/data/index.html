@@ -1,53 +1,82 @@
 <!doctype html>
 <!--
-  index.html — API Box WLAN Setup (Captive Portal)
+  index.html — Sensorbox WLAN Setup (Captive Portal)
   Wird per LittleFS auf den ESP32-C6 hochgeladen und vom Webserver ausgeliefert.
 -->
 <html lang="de">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>API Box — WLAN Setup</title>
-    <link rel="stylesheet" href="css/style.css" />
-  </head>
-  <body>
-    <div class="card">
-      <h1>API Box</h1>
-      <p class="sub">WLAN-Zugangsdaten hinterlegen</p>
 
-      <div class="tabs">
-        <div class="tab active" id="tab-home" onclick="showTab('home')">
-          Heimnetzwerk
-        </div>
-        <div class="tab" id="tab-school" onclick="showTab('school')">
-          Schulnetzwerk
-        </div>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sensorbox — WLAN Setup</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+  <div class="card">
+    <h1>Sensorbox</h1>
+    <p class="sub">WLAN-Zugangsdaten hinterlegen</p>
+
+    <div class="tabs">
+      <div class="tab active" id="tab-home" onclick="showTab('home')">
+        Heimnetzwerk
       </div>
-
-      <!-- Heimnetzwerk -->
-      <form class="form active" id="form-home" action="/save" method="POST">
-        <input type="hidden" name="mode" value="home">
-        <label>SSID</label>
-        <input type="text" name="ssid_privat" placeholder="z.B. FritzBox-1234" required>
-        <label>Passwort</label>
-        <input type="password" name="pass_privat" placeholder="WLAN-Passwort">
-        <button type="submit">Speichern &amp; Verbinden</button>
-      </form>
-
-      <!-- Schulnetzwerk (WPA2-Enterprise) -->
-      <form class="form" id="form-school" action="/save" method="POST">
-        <input type="hidden" name="mode" value="school">
-        <label>Netzwerkname</label>
-        <input type="text" name="ssid_schule" placeholder="z.B. eduroam" required>
-        <label>Username</label>
-        <input type="text" name="user_schule" placeholder="z.B. me@fhgr.ch" required>
-        <label>Passwort</label>
-        <input type="password" name="pass_schule" placeholder="Passwort">
-        <button type="submit">Speichern &amp; Verbinden</button>
-      </form>
-      <p class="hint">Nach dem Speichern startet die API Box neu.</p>
+      <div class="tab" id="tab-school" onclick="showTab('school')">
+        Schulnetzwerk
+      </div>
+      <div class="tab" id="tab-advanced" onclick="showTab('advanced')">
+        Erweitert
+      </div>
     </div>
 
-    <script src="js/script.js"></script>
-  </body>
+    <!-- Heimnetzwerk -->
+    <form class="form active" id="form-home" action="/save" method="POST">
+      <input type="hidden" name="mode" value="home">
+      <label>SSID</label>
+      <input type="text" name="ssid_privat" placeholder="z.B. FritzBox-1234" required>
+      <label>Passwort</label>
+      <input type="password" name="pass_privat" placeholder="WLAN-Passwort">
+      <button type="submit">Speichern &amp; Verbinden</button>
+    </form>
+
+    <!-- Schulnetzwerk (WPA2-Enterprise) -->
+    <form class="form" id="form-school" action="/save" method="POST">
+      <input type="hidden" name="mode" value="school">
+      <label>Netzwerkname</label>
+      <input type="text" name="ssid_schule" placeholder="z.B. eduroam" required>
+      <label>Username</label>
+      <input type="text" name="user_schule" placeholder="z.B. me@fhgr.ch" required>
+      <label>Passwort</label>
+      <input type="password" name="pass_schule" placeholder="Passwort">
+      <button type="submit">Speichern &amp; Verbinden</button>
+    </form>
+
+    <!-- Erweiterte Einstellungen -->
+    <form class="form" id="form-advanced" action="/save" method="POST">
+      <input type="hidden" name="mode" value="advanced">
+      <p class="hint" style="margin-top: 0; margin-bottom: 15px; color: #555;">Hinweis: Lass Felder leer, die du nicht ändern möchtest. Es werden nur ausgefüllte Werte überschrieben.</p>
+      
+      <label>Sensorbox ID (Nicht ändern! Nur im Notfall)</label>
+      <input type="number" name="boxid" placeholder="z.B. 1">
+
+      <label>Temperatur Offset (°C)</label>
+      <input type="number" step="0.1" name="temp_offset" placeholder="z.B. -5.0">
+      
+      <label>Messintervall (s)</label>
+      <input type="number" name="intervall_s" placeholder="z.B. 15">
+      
+      <label>Gewicht Kalibrierfaktor</label>
+      <input type="number" step="any" name="waage_cal" placeholder="z.B. 420.5">
+      
+      <label>Mikrofon Offset (dB)</label>
+      <input type="number" step="0.1" name="dboffset" placeholder="z.B. 120.0">
+      
+      <button type="submit">Speichern &amp; Neustarten</button>
+    </form>
+    <p class="hint">Nach dem Speichern startet die Sensorbox neu.</p>
+  </div>
+
+  <script src="js/script.js"></script>
+</body>
+
 </html>

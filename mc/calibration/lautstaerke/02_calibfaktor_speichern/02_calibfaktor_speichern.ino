@@ -7,7 +7,7 @@
 Preferences preferences;
 
 // Trage hier deinen individuell ermittelten Kalibrierwert ein:
-float cal_mic_db_offset = 120.0; 
+float cal_mic_db_offset = 110.0; 
 
 void setup() {
   Serial.begin(115200);
@@ -15,8 +15,8 @@ void setup() {
   
   Serial.println("--- Starte Speichervorgang ---");
 
-  // Namensraum "mikrofon" öffnen (false = Schreibzugriff)
-  preferences.begin("mikrofon", false); 
+  // Namensraum "sensorbox" öffnen (false = Schreibzugriff)
+  preferences.begin("sensorbox", false); 
   
   // Wert unter dem Schlüssel "dboffset" abspeichern
   preferences.putFloat("dboffset", cal_mic_db_offset);

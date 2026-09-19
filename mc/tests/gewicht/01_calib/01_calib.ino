@@ -23,7 +23,8 @@ void setup() {
   hx711.begin();
 
   // Sensor stabilisieren lassen
-  for (int i = 0; i < 3; i++) hx711.readChannelBlocking(CHAN_A_GAIN_128);
+  for (int i = 0; i < 3; i++)
+    hx711.readChannelBlocking(CHAN_A_GAIN_128);
 
   // 1. Tare ermitteln (Waage muss leer sein)
   Serial.println("Ermittle Tare (NICHTS auflegen)...");
@@ -55,11 +56,14 @@ void setup() {
   Serial.println(waage_calfactor);
 
   // 5. Faktor dauerhaft im Flash (NVS) speichern
-  preferences.begin("waage", false); // "waage" ist der Namensraum, false = Schreibzugriff
-  preferences.putFloat("calfactor", waage_calfactor);
+  preferences.begin(
+      "sensorbox",
+      false); // "sensorbox" ist der Namensraum, false = Schreibzugriff
+  preferences.putFloat("waage_cal", waage_calfactor);
   preferences.end(); // Speicher wieder schließen
 
-  Serial.println("Kalibrierung abgeschlossen und auf dem ESP32-C6 gespeichert!");
+  Serial.println(
+      "Kalibrierung abgeschlossen und auf dem ESP32-C6 gespeichert!");
   Serial.println("Du kannst jetzt das zweite Programm aufspielen.");
 }
 

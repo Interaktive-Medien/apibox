@@ -54,6 +54,7 @@
 int prevTimestamp = 0;
 int intervall_ms = 15000; // 15s -  Mess-Intervalle
 int boxid = 0;
+float temp_offset = 0.0;
 JSONVar latestData;
 
 #include "display.h" // SSD1306 OLED Display
@@ -111,11 +112,23 @@ void setup() {
 
   preferences.begin("sensorbox", true);
   boxid = preferences.getInt("boxid", 0);
+  int intervall_s = preferences.getInt("intervall_s", 15);
+  intervall_ms = intervall_s * 1000;
+  temp_offset = preferences.getFloat("temp_offset", 0.0);
+  float waage_cal = preferences.getFloat("waage_cal", 1.0);
+  float dboffset = preferences.getFloat("dboffset", 120.0);
   preferences.end();
-  Serial.printf("Gelesene Box ID: %d\n", boxid);
+
+  Serial.println("\n--- Gelesene Einstellungen (Preferences) ---");
+  Serial.printf("Box ID: %d\n", boxid);
+  Serial.printf("Messintervall: %d Sekunden\n", intervall_s);
+  Serial.printf("Temperatur-Offset: %.1f °C\n", temp_offset);
+  Serial.printf("Gewicht-Faktor: %.4f\n", waage_cal);
+  Serial.printf("Mikrofon-Offset: %.1f dB\n", dboffset);
+  Serial.println("--------------------------------------------\n");
 
   Wire.begin(I2C_SDA, I2C_SCL);
-  setupDisplay();                   // in display.h
+  setupDisplay();                     // in display.h
   displayText("Starte Sensorbox..."); // in display.h
 
   if (!LittleFS.begin(true)) {
@@ -125,8 +138,8 @@ void setup() {
 
   Serial.println("\n--------\nInitialisiere Sensoren...");
   displayText("Sensoren\ninitialisieren..."); // NEW
-  setupAlkohol();                         // in alkohol.h
-  setupBewegung();                        // in bewegung.h
+  setupAlkohol();                             // in alkohol.h
+  setupBewegung();                            // in bewegung.h
   setupCo2_Temperatur_Luftfeuchtigkeit(); // co2_temperatur_luftfeuchtigkeit.h
   setupDistanz();                         // in distanz.h
   setupGewicht();                         // in gewicht.h

@@ -20,9 +20,9 @@ void setup() {
   Serial.println("--- Waage startet ---");
 
   // 1. Gespeicherten Faktor abrufen
-  preferences.begin("waage", true); // true = reiner Lesezugriff (schont den Flash)
-  // Lese "calfactor". Falls er nicht existiert, nimm als Fallback 1.0f
-  waage_calfactor = preferences.getFloat("calfactor", 1.0f);
+  preferences.begin("sensorbox", true); // true = reiner Lesezugriff (schont den Flash)
+  // Lese "waage_cal". Falls er nicht existiert, nimm als Fallback 1.0f
+  waage_calfactor = preferences.getFloat("waage_cal", 1.0f);
   preferences.end();
 
   Serial.print("Geladener Kalibrierungsfaktor: ");

@@ -23,7 +23,8 @@ float temperature;
 float humidity;
 
 // Forward Declaration (in mc.ino definiert)
-// String createJsonResponse(String wert, String einheit, String datentyp, String sensor);
+// String createJsonResponse(String wert, String einheit, String datentyp,
+// String sensor);
 
 SensirionI2cScd4x scd4x;
 bool scd4xInitialized = false;
@@ -36,8 +37,7 @@ unsigned long scd41_lastRead = 0;
 const unsigned long SCD41_READ_INTERVAL = 5000; // Min. 5s zwischen Messungen
 
 // aufgerufen in mc.ino
-void setupCo2_Temperatur_Luftfeuchtigkeit()
-{
+void setupCo2_Temperatur_Luftfeuchtigkeit() {
   scd4x.begin(Wire, SCD41_I2C_ADDR_62);
 
   // Teste I2C-Verbindung zum SCD41
@@ -47,24 +47,24 @@ void setupCo2_Temperatur_Luftfeuchtigkeit()
   Serial.println(wireErr);
   // Ende Test
 
+  extern float temp_offset;
+  scd4x.stopPeriodicMeasurement(); // Stoppen, falls der Sensor noch im
+                                   // Messmodus ist
+  delay(500);
+
   uint16_t error = scd4x.startPeriodicMeasurement();
-  if (error)
-  {
+  if (error) {
     Serial.println("SCD41 Start fehlgeschlagen!");
     scd4xInitialized = false;
-  }
-  else
-  {
+  } else {
     Serial.println("SCD41 gestartet.");
     scd4xInitialized = true;
   }
 }
 
 // Gemeinsames Auslesen aller SCD41-Werte
-void readSCD41()
-{
-  if (!scd4xInitialized)
-  {
+void readSCD41() {
+  if (!scd4xInitialized) {
     // Serial.println("SCD41 nicht initialisiert!");
     return;
   }
@@ -76,19 +76,24 @@ void readSCD41()
   if (!dataReady)
     return;
 
-  scd4x.readMeasurement(scd41_co2, scd41_temperature, scd41_humidity); // Werte in Variablen oben speichern
+  scd4x.readMeasurement(scd41_co2, scd41_temperature,
+                        scd41_humidity); // Werte in Variablen oben speichern
+
+  // Software-Offset anwenden (einfache Addition/Subtraktion)
+  extern float temp_offset;
+  scd41_temperature += temp_offset;
   // Serial.println("scd41_temperature: " + String(scd41_temperature, 2));
   scd41_lastRead = millis();
 }
 
 // aufgerufen in mc.ino
-void getCo2_Temperatur_Luftfeuchtigkeit()
-{
+void getCo2_Temperatur_Luftfeuchtigkeit() {
   bool dataReady;
   scd4x.getDataReadyStatus(dataReady);
-  if (dataReady)
-  {
+  if (dataReady) {
     scd4x.readMeasurement(co2, temperature, humidity);
+    extern float temp_offset;
+    temperature += temp_offset; // Manuelles Temperatur-Offset anwenden
   }
 }
 

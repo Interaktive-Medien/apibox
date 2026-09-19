@@ -58,6 +58,10 @@ void displayTwoLines(String line1, String line2) {
 
 extern JSONVar latestData;
 extern int boxid;
+extern int intervall_ms;
+extern float temp_offset;
+extern float waage_calfactor;
+extern float mic_db_offset;
 int currentPage = 1;
 
 void renderPage1() {
@@ -114,12 +118,12 @@ void renderPage4() {
   display.println("s =");
 
   if (latestData.hasOwnProperty("latitude")) {
-    display.printf("- latitude: %.4f \xF8\n", (double)latestData["latitude"]);
-    display.printf("- longitude: %.4f \xF8\n", (double)latestData["longitude"]);
-    display.printf("- altitude: %.1f m\n", (double)latestData["altitude"]);
-    display.printf("- gps_num_satellites:\n  %d\n",
+    display.printf("latitude: %.4f \xF8\n", (double)latestData["latitude"]);
+    display.printf("longitude: %.4f \xF8\n", (double)latestData["longitude"]);
+    display.printf("altitude: %.1f m\n", (double)latestData["altitude"]);
+    display.printf("gps_num_satellites:\n  %d\n",
                    (int)latestData["gps_num_satellites"]);
-    display.printf("- gps_time: %s\n", (const char *)latestData["gps_time"]);
+    display.printf("gps_time: %s\n", (const char *)latestData["gps_time"]);
   } else {
     display.println("Warte auf Daten...");
   }
@@ -132,8 +136,8 @@ void renderPage5() {
   display.setCursor(0, 0);
   display.println("s =");
 
-  display.printf("- magnet: %d\n", (int)latestData["magnet"]);
-  display.printf("- lautstaerke: %.1f dB\n", (double)latestData["lautstaerke"]);
+  display.printf("magnet: %d\n", (int)latestData["magnet"]);
+  display.printf("lautstaerke: %.1f dB\n", (double)latestData["lautstaerke"]);
 
   display.display();
 }
@@ -145,6 +149,21 @@ void renderPage6() {
 
   display.printf("Verbunden mit\n%s\n\n", WiFi.SSID().c_str());
   display.printf("IP Adresse:\n%s\n", WiFi.localIP().toString().c_str());
+
+  display.display();
+}
+
+void renderPage7() {
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setCursor(0, 0);
+
+  display.println("Einstellungen:");
+  display.printf("Box ID: %d\n", boxid);
+  display.printf("Messintervall (s): %d\n", intervall_ms / 1000);
+  display.printf("Temperatur-Offset:\n%.1f \xF8\n", temp_offset);
+  display.printf("Gewicht-Kalib: %.2f\n", waage_calfactor);
+  display.printf("Mic-Offset: %.1f\n", mic_db_offset);
 
   display.display();
 }
@@ -169,12 +188,15 @@ void renderCurrentPage() {
   case 6:
     renderPage6();
     break;
+  case 7:
+    renderPage7();
+    break;
   }
 }
 
 void nextDisplayPage() {
   currentPage++;
-  if (currentPage > 6) {
+  if (currentPage > 7) {
     currentPage = 1;
   }
   renderCurrentPage();

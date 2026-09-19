@@ -44,7 +44,7 @@ float mic_db_offset = 120.0;
 void setupLautstaerke()
 {
   // 1. Gespeicherten Offset abrufen
-  preferences.begin("mikrofon", true); // true = reiner Lesezugriff
+  preferences.begin("sensorbox", true); // true = reiner Lesezugriff
   // Lese "dboffset". Falls er nicht existiert, verwende 120.0 als Fallback
   mic_db_offset = preferences.getFloat("dboffset", 120.0);
   preferences.end();

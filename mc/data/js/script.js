@@ -6,6 +6,8 @@
 function showTab(which) {
   document.getElementById('tab-home').classList.toggle('active', which === 'home');
   document.getElementById('tab-school').classList.toggle('active', which === 'school');
+  document.getElementById('tab-advanced').classList.toggle('active', which === 'advanced');
   document.getElementById('form-home').classList.toggle('active', which === 'home');
   document.getElementById('form-school').classList.toggle('active', which === 'school');
+  document.getElementById('form-advanced').classList.toggle('active', which === 'advanced');
 }

@@ -61,6 +61,48 @@ void handlePortalRoot() {
 
 void handlePortalSave() {
   String mode = server.hasArg("mode") ? server.arg("mode") : "home";
+
+  if (mode == "advanced") {
+    preferences.begin("sensorbox", false);
+
+    if (server.hasArg("boxid") && server.arg("boxid").length() > 0) {
+      preferences.putInt("boxid", server.arg("boxid").toInt());
+    }
+    if (server.hasArg("temp_offset") &&
+        server.arg("temp_offset").length() > 0) {
+      preferences.putFloat("temp_offset", server.arg("temp_offset").toFloat());
+    }
+    if (server.hasArg("intervall_s") &&
+        server.arg("intervall_s").length() > 0) {
+      preferences.putInt("intervall_s", server.arg("intervall_s").toInt());
+    }
+    if (server.hasArg("waage_cal") &&
+        server.arg("waage_cal").length() > 0) {
+      preferences.putFloat("waage_cal",
+                           server.arg("waage_cal").toFloat());
+    }
+    if (server.hasArg("dboffset") && server.arg("dboffset").length() > 0) {
+      preferences.putFloat("dboffset", server.arg("dboffset").toFloat());
+    }
+
+    preferences.end();
+
+    String resp = "<!DOCTYPE html><html><head><meta charset='utf-8'>";
+    resp +=
+        "<meta name='viewport' content='width=device-width, initial-scale=1'>";
+    resp += "<style>body{font-family:sans-serif;background:#2a5298;color:#fff;";
+    resp += "display:flex;align-items:center;justify-content:center;height:"
+            "100vh;text-align:center}</style>";
+    resp += "</head><body><div><h2>Erweiterte Einstellungen gespeichert!</h2>";
+    resp += "<p>Die Sensorbox startet neu...</p></div></body></html>";
+    server.send(200, "text/html", resp);
+
+    Serial.println("Erweiterte Einstellungen gespeichert. Neustart in 2s...");
+    delay(2000);
+    ESP.restart();
+    return;
+  }
+
   String ssid =
       server.hasArg("ssid_privat")
           ? server.arg("ssid_privat")
@@ -100,7 +142,7 @@ void handlePortalSave() {
           "text-align:center}</style>";
   resp += "</head><body><div><h2>Gespeichert!</h2>";
   resp += "<p>SSID: " + ssid + "</p>";
-  resp += "<p>Die API Box startet neu und verbindet "
+  resp += "<p>Die Sensorbox startet neu und verbindet "
           "sich...</p></div></body></html>";
   server.send(200, "text/html", resp);
 
